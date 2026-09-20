@@ -13,6 +13,11 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],
+    env: {
+      SESSION_PASSWORD: 'test-session-password-at-least-32-chars-long',
+      DATABASE_URL: 'file:./data/app.db',
+      NODE_ENV: 'test',
+    },
     include: ['**/*.{test,spec}.{ts,tsx}'],
     exclude: ['src/test/e2e/**', 'node_modules/**'],
     coverage: {
