@@ -156,68 +156,19 @@ export async function listPaged(
   cursorToken: string | null,
   limit: number,
 ): Promise<PageResult<RequestListItem>> {
-  const sort = filters.sort
   const cursor = cursorToken ? decodeCursor(cursorToken) : null
   const ftsIds = filters.query ? await ftsMatchIds(db, filters.query) : null
-  const whereClause = buildWhereClause(filters, cursor, ftsIds)
-  const orderBy = buildSortOrder(sort)
-
-  const rows = await db
-    .select({
-      id: serviceRequests.id,
-      reference: serviceRequests.reference,
-      subject: serviceRequests.subject,
-      priority: serviceRequests.priority,
-      status: serviceRequests.status,
-      updatedAt: serviceRequests.updatedAt,
-      createdAt: serviceRequests.createdAt,
-      priorityRank: serviceRequests.priorityRank,
-      requesterId: users.id,
-      requesterName: users.name,
-      requesterEmail: users.email,
-      categoryId: categories.id,
-      categoryName: categories.name,
-      categorySlug: categories.slug,
-      assigneeId: assigneeUser.id,
-      assigneeName: assigneeUser.name,
-    })
-    .from(serviceRequests)
-    .innerJoin(users, eq(serviceRequests.requesterId, users.id))
-    .innerJoin(categories, eq(serviceRequests.categoryId, categories.id))
-    .leftJoin(assigneeUser, eq(serviceRequests.assigneeId, assigneeUser.id))
-    .where(whereClause)
-    .orderBy(...orderBy)
-    .limit(limit + 1)
+  const rows = await fetchListRows(db, filters, cursor, ftsIds, limit)
 
   const hasNextPage = rows.length > limit
   const pageRows = hasNextPage ? rows.slice(0, limit) : rows
-
-  const items: RequestListItem[] = pageRows.map((row) => ({
-    id: row.id,
-    reference: row.reference,
-    subject: row.subject,
-    priority: row.priority,
-    status: row.status,
-    updatedAt: row.updatedAt,
-    requester: {
-      id: row.requesterId,
-      name: row.requesterName,
-      email: row.requesterEmail,
-    },
-    category: {
-      id: row.categoryId,
-      name: row.categoryName,
-      slug: row.categorySlug,
-    },
-    assignee:
-      row.assigneeId && row.assigneeName ? { id: row.assigneeId, name: row.assigneeName } : null,
-  }))
+  const items = mapListRows(pageRows)
 
   const lastRow = pageRows.at(-1)
   const nextCursor =
     hasNextPage && lastRow
       ? encodeCursor(
-          cursorFromRow(sort, {
+          cursorFromRow(filters.sort, {
             id: lastRow.id,
             updatedAt: lastRow.updatedAt,
             createdAt: lastRow.createdAt,
@@ -293,6 +244,247 @@ export async function getByReference(
     assignee:
       row.assigneeId && row.assigneeName ? { id: row.assigneeId, name: row.assigneeName } : null,
   }
+}
+
+const COUNT_CAP = 1_000
+
+export type FacetCounts = {
+  readonly status: Readonly<Partial<Record<RequestStatus, number>>>
+  readonly priority: Readonly<Partial<Record<RequestPriority, number>>>
+  readonly category: Readonly<Record<string, number>>
+  readonly assignee: Readonly<Record<string, number>>
+  readonly total: number | `${number}+`
+}
+
+function mapListRows(
+  pageRows: {
+    id: string
+    reference: string
+    subject: string
+    priority: RequestPriority
+    status: RequestStatus
+    updatedAt: Date
+    requesterId: string
+    requesterName: string
+    requesterEmail: string
+    categoryId: string
+    categoryName: string
+    categorySlug: string
+    assigneeId: string | null
+    assigneeName: string | null
+  }[],
+): RequestListItem[] {
+  return pageRows.map((row) => ({
+    id: row.id,
+    reference: row.reference,
+    subject: row.subject,
+    priority: row.priority,
+    status: row.status,
+    updatedAt: row.updatedAt,
+    requester: {
+      id: row.requesterId,
+      name: row.requesterName,
+      email: row.requesterEmail,
+    },
+    category: {
+      id: row.categoryId,
+      name: row.categoryName,
+      slug: row.categorySlug,
+    },
+    assignee:
+      row.assigneeId && row.assigneeName ? { id: row.assigneeId, name: row.assigneeName } : null,
+  }))
+}
+
+type ListRow = {
+  id: string
+  reference: string
+  subject: string
+  priority: RequestPriority
+  status: RequestStatus
+  updatedAt: Date
+  createdAt: Date
+  priorityRank: number
+  requesterId: string
+  requesterName: string
+  requesterEmail: string
+  categoryId: string
+  categoryName: string
+  categorySlug: string
+  assigneeId: string | null
+  assigneeName: string | null
+}
+
+async function fetchListRows(
+  db: Db,
+  filters: RequestFilters,
+  cursor: Cursor | null,
+  ftsIds: string[] | null,
+  limit: number,
+  offset = 0,
+): Promise<ListRow[]> {
+  const whereClause = buildWhereClause(filters, cursor, ftsIds)
+  const orderBy = buildSortOrder(filters.sort)
+
+  return db
+    .select({
+      id: serviceRequests.id,
+      reference: serviceRequests.reference,
+      subject: serviceRequests.subject,
+      priority: serviceRequests.priority,
+      status: serviceRequests.status,
+      updatedAt: serviceRequests.updatedAt,
+      createdAt: serviceRequests.createdAt,
+      priorityRank: serviceRequests.priorityRank,
+      requesterId: users.id,
+      requesterName: users.name,
+      requesterEmail: users.email,
+      categoryId: categories.id,
+      categoryName: categories.name,
+      categorySlug: categories.slug,
+      assigneeId: assigneeUser.id,
+      assigneeName: assigneeUser.name,
+    })
+    .from(serviceRequests)
+    .innerJoin(users, eq(serviceRequests.requesterId, users.id))
+    .innerJoin(categories, eq(serviceRequests.categoryId, categories.id))
+    .leftJoin(assigneeUser, eq(serviceRequests.assigneeId, assigneeUser.id))
+    .where(whereClause)
+    .orderBy(...orderBy)
+    .offset(offset)
+    .limit(limit + 1)
+}
+
+export async function listOffset(
+  db: Db,
+  filters: RequestFilters,
+  offset: number,
+  limit: number,
+): Promise<PageResult<RequestListItem>> {
+  const ftsIds = filters.query ? await ftsMatchIds(db, filters.query) : null
+  const rows = await fetchListRows(db, filters, null, ftsIds, limit, offset)
+
+  const hasNextPage = rows.length > limit
+  const pageRows = hasNextPage ? rows.slice(0, limit) : rows
+  const items = mapListRows(pageRows)
+
+  const lastRow = pageRows.at(-1)
+  const nextCursor =
+    hasNextPage && lastRow
+      ? encodeCursor(
+          cursorFromRow(filters.sort, {
+            id: lastRow.id,
+            updatedAt: lastRow.updatedAt,
+            createdAt: lastRow.createdAt,
+            priorityRank: lastRow.priorityRank,
+          }),
+        )
+      : null
+
+  return {
+    items,
+    nextCursor,
+    hasNextPage,
+  }
+}
+
+export async function countMatching(db: Db, filters: RequestFilters): Promise<number | `${number}+`> {
+  const ftsIds = filters.query ? await ftsMatchIds(db, filters.query) : null
+  const whereClause = buildWhereClause(filters, null, ftsIds)
+
+  const rows = await db
+    .select({ id: serviceRequests.id })
+    .from(serviceRequests)
+    .where(whereClause)
+    .limit(COUNT_CAP + 1)
+
+  if (rows.length > COUNT_CAP) {
+    return `${String(COUNT_CAP)}+` as `${number}+`
+  }
+
+  return rows.length
+}
+
+export async function getFacetCounts(db: Db, scope: RequestFilters): Promise<FacetCounts> {
+  const ftsIds = scope.query ? await ftsMatchIds(db, scope.query) : null
+  const baseWhere = buildWhereClause(
+    {
+      ...scope,
+      statuses: [],
+      priorities: [],
+      categoryIds: [],
+      assigneeIds: [],
+    },
+    null,
+    ftsIds,
+  )
+
+  const statusRows = await db
+    .select({
+      status: serviceRequests.status,
+      count: sql<number>`count(*)`.mapWith(Number),
+    })
+    .from(serviceRequests)
+    .where(baseWhere)
+    .groupBy(serviceRequests.status)
+
+  const priorityRows = await db
+    .select({
+      priority: serviceRequests.priority,
+      count: sql<number>`count(*)`.mapWith(Number),
+    })
+    .from(serviceRequests)
+    .where(baseWhere)
+    .groupBy(serviceRequests.priority)
+
+  const categoryRows = await db
+    .select({
+      categoryId: serviceRequests.categoryId,
+      count: sql<number>`count(*)`.mapWith(Number),
+    })
+    .from(serviceRequests)
+    .where(baseWhere)
+    .groupBy(serviceRequests.categoryId)
+
+  const assigneeRows = await db
+    .select({
+      assigneeId: serviceRequests.assigneeId,
+      count: sql<number>`count(*)`.mapWith(Number),
+    })
+    .from(serviceRequests)
+    .where(baseWhere)
+    .groupBy(serviceRequests.assigneeId)
+
+  const status: Partial<Record<RequestStatus, number>> = {}
+  for (const row of statusRows) {
+    status[row.status] = row.count
+  }
+
+  const priority: Partial<Record<RequestPriority, number>> = {}
+  for (const row of priorityRows) {
+    priority[row.priority] = row.count
+  }
+
+  const category: Record<string, number> = {}
+  for (const row of categoryRows) {
+    category[row.categoryId] = row.count
+  }
+
+  const assignee: Record<string, number> = {}
+  for (const row of assigneeRows) {
+    const key = row.assigneeId ?? 'unassigned'
+    assignee[key] = row.count
+  }
+
+  const total = await countMatching(db, {
+    ...scope,
+    statuses: [],
+    priorities: [],
+    categoryIds: [],
+    assigneeIds: [],
+  })
+
+  return { status, priority, category, assignee, total }
 }
 
 export async function explainListQueryPlan(db: Db, filters: RequestFilters): Promise<string> {

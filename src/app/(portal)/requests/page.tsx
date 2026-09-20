@@ -1,16 +1,24 @@
 import type { Metadata } from 'next'
+import { Suspense } from 'react'
+
+import { RequestsDashboard } from '@/features/requests/components/requests-dashboard'
+import { RequestTableSkeleton } from '@/features/requests/components/request-table-skeleton'
 
 export const metadata: Metadata = {
   title: 'Service requests · As-Sunnah Desk',
 }
 
-export default function RequestsPage() {
+type RequestsPageProps = {
+  searchParams: Promise<Record<string, string | string[] | undefined>>
+}
+
+export default function RequestsPage({ searchParams }: RequestsPageProps) {
   return (
-    <div className="space-y-2">
+    <div className="space-y-6">
       <h1 className="text-2xl font-semibold tracking-tight">Service requests</h1>
-      <p className="text-sm text-muted-foreground">
-        Dashboard arrives in Phase 3. You are signed in and this route is protected.
-      </p>
+      <Suspense fallback={<RequestTableSkeleton rows={10} />}>
+        <RequestsDashboard searchParams={searchParams} />
+      </Suspense>
     </div>
   )
 }

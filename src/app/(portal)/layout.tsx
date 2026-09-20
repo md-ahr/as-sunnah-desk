@@ -1,11 +1,13 @@
 import { Suspense } from 'react'
 
+import { SkipLink } from '@/components/skip-link'
 import { PortalHeader } from '@/features/auth/components/portal-header'
 import { PortalHeaderSkeleton } from '@/features/auth/components/portal-header-skeleton'
 
 export default function PortalLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-dvh">
+      <SkipLink />
       <Suspense fallback={<PortalHeaderSkeleton />}>
         <PortalHeader />
       </Suspense>

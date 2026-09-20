@@ -1,12 +1,12 @@
 import type { Page } from '@playwright/test'
 import { expect, test } from '@playwright/test'
 
+import { ADMIN_ACCOUNT } from './helpers/auth'
+
 const SEEDED_ACCOUNTS = [
   {
     role: 'admin',
-    email: 'admin@assunnah.test',
-    password: 'test.admin',
-    name: 'Admin User',
+    ...ADMIN_ACCOUNT,
   },
   {
     role: 'manager',
@@ -51,17 +51,19 @@ test.describe('authentication', () => {
 
   test('rejects invalid credentials with a generic error', async ({ page }) => {
     await page.goto('/login')
-    await page.getByLabel('Email', { exact: true }).fill(SEEDED_ACCOUNTS[0].email)
+    await page.getByLabel('Email', { exact: true }).fill('unknown@assunnah.test')
     await page.getByLabel('Password', { exact: true }).fill('wrong-password')
     await page.getByRole('button', { name: 'Sign in' }).click()
 
-    await expect(page.getByRole('alert')).toHaveText('Invalid email or password.')
+    await expect(
+      page.getByRole('alert').filter({ hasText: 'Invalid email or password.' }),
+    ).toBeVisible()
   })
 
   test('signs in and returns to the requested destination', async ({ page }) => {
     await signIn(page, SEEDED_ACCOUNTS[0])
     await expect(page.getByRole('heading', { name: 'Service requests' })).toBeVisible()
-    await expect(page.getByText(SEEDED_ACCOUNTS[0].name)).toBeVisible()
+    await expect(page.getByRole('banner').getByText(SEEDED_ACCOUNTS[0].name)).toBeVisible()
   })
 
   test('signs out and returns to login', async ({ page }) => {
@@ -77,7 +79,7 @@ test.describe('authentication', () => {
   for (const account of SEEDED_ACCOUNTS) {
     test(`${account.role} account can sign in and sign out`, async ({ page }) => {
       await signIn(page, account)
-      await expect(page.getByText(account.name)).toBeVisible()
+      await expect(page.getByRole('banner').getByText(account.name)).toBeVisible()
 
       await page.getByRole('button', { name: 'Sign out' }).click()
       await expect(page).toHaveURL('/login')

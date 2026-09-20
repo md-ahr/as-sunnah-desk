@@ -513,102 +513,102 @@ Depends on Phase 1 (repositories, pagination) and Phase 2 (DAL, session).
 
 ### 3.1 · Request service (read path)
 
-- [ ] `src/server/services/request.service.ts` — `list()` and scope filters by role
+- [x] `src/server/services/request.service.ts` — `list()` and scope filters by role
   ```
   (narrow query, never post-filter — [03 § reading the dashboard](./03-system-architecture.md#reading-the-dashboard))
   ```
-- [ ] Slug → id resolution for category filter
-- [ ] Facet counts query (cached in 3.6)
+- [x] Slug → id resolution for category filter
+- [x] Facet counts query (cached in 3.6)
 
 
 
 ### 3.2 · URL contract
 
-- [ ] `src/lib/search-params/schema.ts` — Zod URL contract (search, filters, sort, cursor, perPage)
-- [ ] `src/lib/search-params/categories.ts` — slug enum
-- [ ] `parse`, `serialise`, cursor helpers
-- [ ] Unit tests: invalid values fall back to defaults; round-trip serialisation
+- [x] `src/lib/search-params/schema.ts` — Zod URL contract (search, filters, sort, cursor, perPage)
+- [x] `src/lib/search-params/categories.ts` — slug enum
+- [x] `parse`, `serialise`, cursor helpers
+- [x] Unit tests: invalid values fall back to defaults; round-trip serialisation
 
 
 
 ### 3.3 · Portal shell
 
-- [ ] `src/app/(portal)/layout.tsx` — app shell; session read inside Suspense-wrapped header
-- [ ] `PortalHeader`, `PortalNav`, `UserMenu`, `SkipLink`
-- [ ] `<main id="main">` landmark; no top-level `await`
+- [x] `src/app/(portal)/layout.tsx` — app shell; session read inside Suspense-wrapped header
+- [x] `PortalHeader`, `PortalNav`, `UserMenu`, `SkipLink`
+- [x] `<main id="main">` landmark; no top-level `await`
 
 
 
 ### 3.4 · Dashboard route and table
 
-- [ ] `src/app/(portal)/requests/page.tsx` — non-async; pass `searchParams` promise down
-- [ ] `src/features/requests/request-columns.ts` — shared column defs (desktop + mobile)
-- [ ] `RequestTable`, `RequestRow` — Server Components; semantic `<table>`
-- [ ] `RequestTableSkeleton` — matching row geometry
-- [ ] `StatusBadge`, `PriorityBadge` — read-only until Phase 5
+- [x] `src/app/(portal)/requests/page.tsx` — non-async; pass `searchParams` promise down
+- [x] `src/features/requests/request-columns.ts` — shared column defs (desktop + mobile)
+- [x] `RequestTable`, `RequestRow` — Server Components; semantic `<table>`
+- [x] `RequestTableSkeleton` — matching row geometry
+- [x] `StatusBadge`, `PriorityBadge` — read-only until Phase 5
 
 
 
 ### 3.5 · Search, filters, and pagination (client islands)
 
-- [ ] `src/lib/hooks/use-debounced-callback.ts` — SearchInput only
+- [x] `src/lib/hooks/use-debounced-callback.ts` — SearchInput only
   ```
   ([02 § debounced search](./02-tech-stack-decisions.md#debounced-search-timing))
   ```
-- [ ] `SearchInput`, `FilterBar`, `ActiveFilterChip`, `ClearFiltersButton` — Client Components
-- [ ] `popover` + `checkbox` (desktop); `sheet` (mobile filters)
-- [ ] `PerPageSelect` — clears cursor on change
-- [ ] `Pagination` — anchor links only (Server Component)
-- [ ] `SortLink` in column headers — `aria-sort`
+- [x] `SearchInput`, `FilterBar`, `ActiveFilterChip`, `ClearFiltersButton` — Client Components
+- [x] `popover` + `checkbox` (desktop); `sheet` (mobile filters)
+- [x] `PerPageSelect` — clears cursor on change
+- [x] `Pagination` — anchor links only (Server Component)
+- [x] `SortLink` in column headers — `aria-sort`
 
 
 
 ### 3.6 · Cached reference data
 
-- [ ] `src/server/cache/tags.ts` — centralised tag names
-- [ ] `FacetCounts` — `use cache` + `cacheTag`; categories / assignable users similarly if needed
-- [ ] `ResultsLiveRegion` — announces result count changes
+- [x] `src/server/cache/tags.ts` — centralised tag names
+- [x] `FacetCounts` — `use cache` + `cacheTag`; categories / assignable users similarly if needed
+- [x] `ResultsLiveRegion` — announces result count changes
 
 
 
 ### 3.7 · Application states (dashboard segment)
 
-- [ ] `EmptyState` — two variants: no data vs no filter matches
-- [ ] `src/app/(portal)/requests/loading.tsx` — skeleton via `RequestTableSkeleton`
-- [ ] `src/app/(portal)/requests/error.tsx` — `retry()` Client boundary
+- [x] `EmptyState` — two variants: no data vs no filter matches
+- [x] `src/app/(portal)/requests/loading.tsx` — skeleton via `RequestTableSkeleton`
+- [x] `src/app/(portal)/requests/error.tsx` — `retry()` Client boundary
 
 
 
 ### 3.8 · Responsive layout and accessibility
 
-- [ ] CSS: table → cards at mobile breakpoint; `data-label` pseudo-elements
-- [ ] `<caption>`, `scope`, keyboard-operable filter sheet
-- [ ] Component tests with `jest-axe` on `EmptyState`, filter bar
+- [x] CSS: table → cards at mobile breakpoint; `data-label` pseudo-elements
+- [x] `<caption>`, `scope`, keyboard-operable filter sheet
+- [x] Component tests with `jest-axe` on `EmptyState`, filter bar
 
 
 
 ### 3.9 · Tests
 
-- [ ] Unit: `lib/search-params/` full suite
-- [ ] E2E: `dashboard.spec.ts`, `search.spec.ts`, `filters.spec.ts`, `pagination.spec.ts`
-- [ ] `@axe-core/playwright` on dashboard load
+- [x] Unit: `lib/search-params/` full suite
+- [x] E2E: `dashboard.spec.ts`, `search.spec.ts`, `filters.spec.ts`, `pagination.spec.ts`
+- [x] `@axe-core/playwright` on dashboard load
 
 
 
 ### 3.10 · Build checkpoint (do not skip)
 
-- [ ] Run `pnpm build`; confirm `/requests` reports a static shell + streaming boundaries
-- [ ] If not static, fix misplaced `cookies()` / `headers()` before Phase 4
+- [x] Run `pnpm build`; confirm `/requests` reports a static shell + streaming boundaries
+- [x] If not static, fix misplaced `cookies()` / `headers()` before Phase 4
 
 
 
 ### Done when
 
-- [ ] All eight columns render; default page size is 10
-- [ ] Search debounces to a single navigation; filters compose; pasted URL reproduces view
-- [ ] Layout correct at 375px, 768px, 1280px
-- [ ] `jest-axe` and Playwright a11y checks clean
-- [ ] Build checkpoint passed
+- [x] All eight columns render; default page size is 10
+- [x] Search debounces to a single navigation; filters compose; pasted URL reproduces view
+- [x] Layout correct at 375px, 768px, 1280px
+- [x] `jest-axe` and Playwright a11y checks clean
+- [x] Build checkpoint passed
 
 ---
 
