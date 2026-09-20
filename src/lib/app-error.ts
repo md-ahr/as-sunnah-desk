@@ -4,6 +4,7 @@ export type AppErrorCode =
   | 'FORBIDDEN'
   | 'NOT_FOUND'
   | 'CONFLICT'
+  | 'INVALID_TRANSITION'
   | 'RATE_LIMITED'
   | 'INTERNAL'
 

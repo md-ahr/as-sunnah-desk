@@ -643,54 +643,54 @@ Depends on Phase 3 (request service, auth scoping).
 
 ### 4.1 · Service and repository
 
-- [ ] `request.service.ts` — `getByReference(reference, user)` with scope check
-- [ ] `activity.repository.ts` — `listByRequestId` (if not complete in Phase 1)
+- [x] `request.service.ts` — `getByReference(reference, user)` with scope check
+- [x] `activity.repository.ts` — `listByRequestId` (if not complete in Phase 1)
 
 
 
 ### 4.2 · Detail route
 
-- [ ] `src/app/(portal)/requests/[id]/page.tsx` — `PageProps<'/requests/[id]'>`
-- [ ] `notFound()` for unknown reference and out-of-scope reference
-- [ ] `prefetch={true}` on subject link in dashboard list
+- [x] `src/app/(portal)/requests/[id]/page.tsx` — `PageProps<'/requests/[id]'>`
+- [x] `notFound()` for unknown reference and out-of-scope reference
+- [x] `prefetch={true}` on subject link in dashboard list
 
 
 
 ### 4.3 · Detail UI (read-only controls)
 
-- [ ] `RequestDetailPanel` — all fields per [14 § detail](./14-ui-component-plan.md#request-detail-phase-4);
+- [x] `RequestDetailPanel` — all fields per [14 § detail](./14-ui-component-plan.md#request-detail-phase-4);
   ```
   status and assignee **read-only** until Phase 5
   ```
-- [ ] `RequestDetailSkeleton`
-- [ ] `ActivityTimeline` + `ActivityEntry` — separate Suspense boundary below panel
+- [x] `RequestDetailSkeleton`
+- [x] `ActivityTimeline` + `ActivityEntry` — separate Suspense boundary below panel
 
 
 
 ### 4.4 · Metadata and caching
 
-- [ ] `generateMetadata` reusing `React.cache()`-memoised query
-- [ ] No duplicate DB round-trip for metadata + page body
+- [x] `generateMetadata` reusing `React.cache()`-memoised query
+- [x] No duplicate DB round-trip for metadata + page body
 
 
 
 ### 4.5 · Segment states
 
-- [ ] `not-found.tsx`, `loading.tsx`, `error.tsx` colocated under `[id]/`
+- [x] `not-found.tsx`, `loading.tsx`, `error.tsx` colocated under `[id]/`
 
 
 
 ### 4.6 · Tests
 
-- [ ] E2E: `detail.spec.ts` — cold direct URL, refresh, timeline streams, not-found
+- [x] E2E: `detail.spec.ts` — cold direct URL, refresh, timeline streams, not-found
 
 
 
 ### Done when
 
-- [ ] Direct URL and refresh preserve the view
-- [ ] Timeline streams independently of panel above it
-- [ ] Unknown / unauthorised reference shows not-found
+- [x] Direct URL and refresh preserve the view
+- [x] Timeline streams independently of panel above it
+- [x] Unknown / unauthorised reference shows not-found
 
 ---
 

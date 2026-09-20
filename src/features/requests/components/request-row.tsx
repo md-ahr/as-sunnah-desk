@@ -4,22 +4,13 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { toRoute } from '@/lib/routes'
 import { PriorityBadge } from '@/features/requests/components/priority-badge'
 import { StatusBadge } from '@/features/requests/components/status-badge'
-import { formatRelativeTime } from '@/features/requests/lib/labels'
+import { formatRelativeTime, initials } from '@/features/requests/lib/labels'
 import { columnMobileHiddenProps, REQUEST_COLUMNS } from '@/features/requests/request-columns'
 import type { RequestListItemDto } from '@/features/requests/types'
 
 const MOBILE_HIDDEN = new Map(
   REQUEST_COLUMNS.map((column) => [column.id, columnMobileHiddenProps(column)]),
 )
-
-function initials(name: string): string {
-  const parts = name.trim().split(/\s+/).filter(Boolean)
-  const first = parts[0]
-  const second = parts[1]
-  if (!first) return '?'
-  if (!second) return first.slice(0, 2).toUpperCase()
-  return `${first[0] ?? ''}${second[0] ?? ''}`.toUpperCase()
-}
 
 type RequestRowProps = {
   row: RequestListItemDto
@@ -30,13 +21,9 @@ export function RequestRow({ row }: RequestRowProps) {
   const updatedAbsolute = row.updatedAt.toLocaleString()
 
   return (
-    <tr className="request-table-row border-t border-border">
+    <tr className="request-table-row border-border border-t">
       <th scope="row" className="px-4 py-3 text-left font-medium" data-label="ID">
-        <Link
-          href={toRoute(`/requests/${row.reference}`)}
-          prefetch={true}
-          className="text-primary hover:underline"
-        >
+        <Link href={toRoute(`/requests/${row.reference}`)} className="text-primary hover:underline">
           {row.reference}
         </Link>
       </th>
@@ -57,7 +44,7 @@ export function RequestRow({ row }: RequestRowProps) {
           </Avatar>
           <div className="min-w-0">
             <p className="truncate text-sm font-medium">{row.requester.name}</p>
-            <p className="truncate text-xs text-muted-foreground">{row.requester.email}</p>
+            <p className="text-muted-foreground truncate text-xs">{row.requester.email}</p>
           </div>
         </div>
       </td>

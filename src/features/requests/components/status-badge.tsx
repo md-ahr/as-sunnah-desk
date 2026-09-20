@@ -15,11 +15,17 @@ const STATUS_STYLES: Record<RequestStatus, string> = {
 
 type StatusBadgeProps = {
   status: RequestStatus
+  className?: string
+  'data-testid'?: string
 }
 
-export function StatusBadge({ status }: StatusBadgeProps) {
+export function StatusBadge({ status, className, 'data-testid': testId }: StatusBadgeProps) {
   return (
-    <Badge variant="outline" className={cn('border-transparent', STATUS_STYLES[status])}>
+    <Badge
+      variant="outline"
+      className={cn('border-transparent', STATUS_STYLES[status], className)}
+      data-testid={testId}
+    >
       {statusLabel(status)}
     </Badge>
   )

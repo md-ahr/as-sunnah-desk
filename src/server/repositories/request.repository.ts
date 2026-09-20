@@ -27,6 +27,7 @@ export type RequestListItem = {
   readonly subject: string
   readonly priority: RequestPriority
   readonly status: RequestStatus
+  readonly version: number
   readonly updatedAt: Date
   readonly requester: {
     readonly id: string
@@ -184,6 +185,65 @@ export async function listPaged(
   }
 }
 
+export async function getById(id: string, db: Db = getDb()): Promise<RequestDetail | null> {
+  const [row] = await db
+    .select({
+      id: serviceRequests.id,
+      reference: serviceRequests.reference,
+      subject: serviceRequests.subject,
+      description: serviceRequests.description,
+      priority: serviceRequests.priority,
+      status: serviceRequests.status,
+      updatedAt: serviceRequests.updatedAt,
+      createdAt: serviceRequests.createdAt,
+      resolvedAt: serviceRequests.resolvedAt,
+      version: serviceRequests.version,
+      requesterId: users.id,
+      requesterName: users.name,
+      requesterEmail: users.email,
+      categoryId: categories.id,
+      categoryName: categories.name,
+      categorySlug: categories.slug,
+      assigneeId: assigneeUser.id,
+      assigneeName: assigneeUser.name,
+    })
+    .from(serviceRequests)
+    .innerJoin(users, eq(serviceRequests.requesterId, users.id))
+    .innerJoin(categories, eq(serviceRequests.categoryId, categories.id))
+    .leftJoin(assigneeUser, eq(serviceRequests.assigneeId, assigneeUser.id))
+    .where(eq(serviceRequests.id, id))
+    .limit(1)
+
+  if (!row) {
+    return null
+  }
+
+  return {
+    id: row.id,
+    reference: row.reference,
+    subject: row.subject,
+    description: row.description,
+    priority: row.priority,
+    status: row.status,
+    updatedAt: row.updatedAt,
+    createdAt: row.createdAt,
+    resolvedAt: row.resolvedAt,
+    version: row.version,
+    requester: {
+      id: row.requesterId,
+      name: row.requesterName,
+      email: row.requesterEmail,
+    },
+    category: {
+      id: row.categoryId,
+      name: row.categoryName,
+      slug: row.categorySlug,
+    },
+    assignee:
+      row.assigneeId && row.assigneeName ? { id: row.assigneeId, name: row.assigneeName } : null,
+  }
+}
+
 export async function getByReference(
   reference: string,
   db: Db = getDb(),
@@ -263,6 +323,7 @@ function mapListRows(
     subject: string
     priority: RequestPriority
     status: RequestStatus
+    version: number
     updatedAt: Date
     requesterId: string
     requesterName: string
@@ -280,6 +341,7 @@ function mapListRows(
     subject: row.subject,
     priority: row.priority,
     status: row.status,
+    version: row.version,
     updatedAt: row.updatedAt,
     requester: {
       id: row.requesterId,
@@ -302,6 +364,7 @@ type ListRow = {
   subject: string
   priority: RequestPriority
   status: RequestStatus
+  version: number
   updatedAt: Date
   createdAt: Date
   priorityRank: number
@@ -333,6 +396,7 @@ async function fetchListRows(
       subject: serviceRequests.subject,
       priority: serviceRequests.priority,
       status: serviceRequests.status,
+      version: serviceRequests.version,
       updatedAt: serviceRequests.updatedAt,
       createdAt: serviceRequests.createdAt,
       priorityRank: serviceRequests.priorityRank,
@@ -504,4 +568,53 @@ export async function explainListQueryPlan(db: Db, filters: RequestFilters): Pro
   })
 
   return result.rows.map((row: Record<string, unknown>) => String(row[3])).join('\n')
+}
+
+export async function updateStatusIfVersionMatches(
+  db: Db,
+  id: string,
+  expectedVersion: number,
+  nextStatus: RequestStatus,
+  now: Date,
+): Promise<RequestDetail | null> {
+  const rows = await db
+    .update(serviceRequests)
+    .set({
+      status: nextStatus,
+      version: sql`${serviceRequests.version} + 1`,
+      updatedAt: now,
+      resolvedAt: nextStatus === 'resolved' ? now : serviceRequests.resolvedAt,
+    })
+    .where(and(eq(serviceRequests.id, id), eq(serviceRequests.version, expectedVersion)))
+    .returning({ id: serviceRequests.id })
+
+  if (!rows[0]) {
+    return null
+  }
+
+  return getById(id, db)
+}
+
+export async function updateAssigneeIfVersionMatches(
+  db: Db,
+  id: string,
+  expectedVersion: number,
+  nextAssigneeId: string | null,
+  now: Date,
+): Promise<RequestDetail | null> {
+  const rows = await db
+    .update(serviceRequests)
+    .set({
+      assigneeId: nextAssigneeId,
+      version: sql`${serviceRequests.version} + 1`,
+      updatedAt: now,
+    })
+    .where(and(eq(serviceRequests.id, id), eq(serviceRequests.version, expectedVersion)))
+    .returning({ id: serviceRequests.id })
+
+  if (!rows[0]) {
+    return null
+  }
+
+  return getById(id, db)
 }

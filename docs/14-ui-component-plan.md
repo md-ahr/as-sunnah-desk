@@ -199,7 +199,7 @@ These are **your** components under `src/features/` and `src/components/`. They 
 
 ### Phase 4
 
-- [ ] `RequestDetailPanel`, `ActivityTimeline`, segment error/loading/not-found
+- [x] `RequestDetailPanel`, `ActivityTimeline`, segment error/loading/not-found
 
 ### Phase 5
 

@@ -21,6 +21,7 @@ export type RequestListItemDto = {
     readonly id: string
     readonly name: string
   } | null
+  readonly version: number
 }
 
 export type FacetCountsDto = {
@@ -40,4 +41,11 @@ export type CategoryOption = {
 export type AssigneeOption = {
   readonly id: string
   readonly name: string
+}
+
+export type RequestDetailDto = RequestListItemDto & {
+  readonly description: string
+  readonly createdAt: Date
+  readonly resolvedAt: Date | null
+  readonly version: number
 }

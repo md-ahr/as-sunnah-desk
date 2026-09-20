@@ -7,6 +7,19 @@ import { getDb } from '@/server/db/client'
 import { requestActivities, users } from '@/server/db/schema'
 import type { ActivityType } from '@/server/db/schema'
 
+export type ActivityInsert = {
+  readonly id: string
+  readonly requestId: string
+  readonly actorId: string
+  readonly type: ActivityType
+  readonly field: string | null
+  readonly fromValue: string | null
+  readonly toValue: string | null
+  readonly comment: string | null
+  readonly idempotencyKey: string
+  readonly createdAt: Date
+}
+
 export type ActivityListItem = {
   readonly id: string
   readonly requestId: string
@@ -61,4 +74,36 @@ export async function listActivitiesByRequestId(
       email: row.actorEmail,
     },
   }))
+}
+
+export async function findByIdempotencyKey(
+  key: string,
+  db: Db = getDb(),
+): Promise<{ requestId: string } | null> {
+  const [row] = await db
+    .select({ requestId: requestActivities.requestId })
+    .from(requestActivities)
+    .where(eq(requestActivities.idempotencyKey, key))
+    .limit(1)
+
+  return row ?? null
+}
+
+export async function insertActivity(
+  activity: ActivityInsert,
+  db: Db = getDb(),
+): Promise<void> {
+  await db.insert(requestActivities).values(activity)
+}
+
+export async function countActivitiesByRequestId(
+  requestId: string,
+  db: Db = getDb(),
+): Promise<number> {
+  const rows = await db
+    .select({ id: requestActivities.id })
+    .from(requestActivities)
+    .where(eq(requestActivities.requestId, requestId))
+
+  return rows.length
 }

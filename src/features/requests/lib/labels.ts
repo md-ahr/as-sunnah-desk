@@ -36,3 +36,20 @@ export function formatRelativeTime(date: Date): string {
   if (hours < 48) return formatter.format(Math.round(diffMs / 3_600_000), 'hour')
   return formatter.format(Math.round(diffMs / 86_400_000), 'day')
 }
+
+export function formatAbsoluteTime(date: Date): string {
+  return new Intl.DateTimeFormat('en-GB', {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+    timeZone: 'UTC',
+  }).format(date)
+}
+
+export function initials(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean)
+  const first = parts[0]
+  const second = parts[1]
+  if (!first) return '?'
+  if (!second) return first.slice(0, 2).toUpperCase()
+  return `${first[0] ?? ''}${second[0] ?? ''}`.toUpperCase()
+}
