@@ -1,0 +1,14 @@
+---
+description: Project stack, constraints, and doc index for As-Sunnah Desk
+alwaysApply: true
+---
+
+# As-Sunnah Desk
+
+Next.js 16 App Router · React 19 · TypeScript strict · SQLite (libSQL + Drizzle) · shadcn/ui on Base UI · Cache Components enabled.
+
+Assessment constraints: no separate backend, no paid services, no client data-fetching library, URL is filter state source of truth.
+
+- Docs index: `docs/README.md`
+- Roadmap: `docs/11-implementation-roadmap.md`
+- Quality gate: `pnpm verify`

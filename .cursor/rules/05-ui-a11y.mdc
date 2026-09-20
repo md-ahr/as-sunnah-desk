@@ -1,0 +1,13 @@
+---
+description: Semantic HTML, keyboard access, Base UI patterns
+globs: src/components/**,src/features/**/components/**
+---
+
+# UI and accessibility
+
+- Prefer semantic HTML (`table`, `nav`, `button`) over div soup.
+- Status must not rely on colour alone — include text labels.
+- shadcn on Base UI uses `render`, not Radix `asChild`.
+- Keyboard-operable controls; focus visible; live regions for async feedback.
+
+Reference: `docs/17-ui-design-guidelines.md`, `docs/08-ui-states-and-accessibility.md`

@@ -1,0 +1,13 @@
+---
+description: Next.js 16 RSC and Cache Components conventions
+globs: src/app/**,src/features/**
+---
+
+# Next.js RSC
+
+- Server Components by default; `'use client'` on the smallest interactive leaf.
+- Never top-level `await` in layouts — it blocks `{children}` streaming.
+- `searchParams` and `params` are Promises; await inside Suspense boundaries.
+- Read bundled docs in `node_modules/next/dist/docs/` before changing config.
+
+Reference: `docs/13-nextjs-16-reference.md`

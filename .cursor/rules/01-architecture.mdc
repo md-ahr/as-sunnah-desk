@@ -1,0 +1,14 @@
+---
+description: Layer dependency rule and thin routes
+globs: src/**/*
+---
+
+# Architecture
+
+Dependencies flow inward only: `app/` → `features/` → `server/services` → `server/repositories` → `server/db`. `lib/` imports nothing.
+
+- Routes: parse URL, compose components, Suspense/error boundaries — no queries, no business logic.
+- Every read/write passes through the DAL (`server/auth`) in later phases.
+- Add queries in repositories, not pages.
+
+Full layer table: `docs/03-system-architecture.md#the-dependency-rule`

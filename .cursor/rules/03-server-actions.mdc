@@ -1,0 +1,13 @@
+---
+description: Server Action preamble and Result returns
+globs: src/features/**/actions/**
+---
+
+# Server Actions
+
+Four-step preamble: Zod validate → authenticate → authorize → execute.
+
+- Return `Result<T, AppError>` for expected failures; do not throw for validation/conflict/permission errors.
+- Check idempotency keys and optimistic concurrency (`version`) on writes.
+
+Reference: `docs/07-mutations-and-client-state.md`

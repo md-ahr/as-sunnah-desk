@@ -1,0 +1,29 @@
+{
+  "$schema": "https://unpkg.com/knip@5/schema.json",
+  "ignore": ["src/components/ui/**", "drizzle/meta/**"],
+  "ignoreDependencies": [
+    "@base-ui/react",
+    "@libsql/client",
+    "@node-rs/argon2",
+    "@tanstack/react-virtual",
+    "class-variance-authority",
+    "drizzle-orm",
+    "iron-session",
+    "@axe-core/playwright",
+    "@faker-js/faker",
+    "@testing-library/react",
+    "eslint-import-resolver-typescript",
+    "eslint-plugin-import",
+    "eslint-plugin-jsx-a11y",
+    "jest-axe"
+  ],
+  "ignoreExportsUsedInFile": {
+    "interface": true,
+    "type": true
+  },
+  "ignoreFiles": ["src/lib/utils.ts", "src/server/errors/app-error.ts"],
+  "ignoreIssues": {
+    "src/lib/app-error.ts": ["exports"],
+    "src/server/env.ts": ["exports"]
+  }
+}

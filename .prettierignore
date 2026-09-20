@@ -1,0 +1,4 @@
+.next
+drizzle/meta
+pnpm-lock.yaml
+src/components/ui/**

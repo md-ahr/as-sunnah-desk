@@ -1,0 +1,13 @@
+---
+description: Testing layers and tooling
+globs: "**/*.{test,spec}.{ts,tsx},src/test/e2e/**"
+---
+
+# Testing
+
+- Unit: pure logic in `lib/`, state machine, URL parsing — Vitest, no mocks.
+- Integration: services/repositories against real SQLite — no repository mocks.
+- E2E: Playwright on production build for async RSC flows.
+- No `waitForTimeout` — use assertion-driven waits.
+
+Reference: `docs/09-testing-strategy.md`, `docs/16-test-guidelines.md`
