@@ -5,7 +5,7 @@ import type { SQL } from 'drizzle-orm'
 
 import { cursorFromRow, decodeCursor, encodeCursor } from '@/lib/search-params/cursor'
 import type { Cursor, SortKey } from '@/lib/search-params/cursor'
-import type { AppDb, Db } from '@/server/db/client'
+import type { AppDb, Db, DbExecutor } from '@/server/db/client'
 import { getDb } from '@/server/db/client'
 import { categories, serviceRequests, users } from '@/server/db/schema'
 import type { RequestPriority, RequestStatus } from '@/server/db/schema'
@@ -185,7 +185,7 @@ export async function listPaged(
   }
 }
 
-export async function getById(id: string, db: Db = getDb()): Promise<RequestDetail | null> {
+export async function getById(id: string, db: DbExecutor = getDb()): Promise<RequestDetail | null> {
   const [row] = await db
     .select({
       id: serviceRequests.id,
@@ -571,7 +571,7 @@ export async function explainListQueryPlan(db: Db, filters: RequestFilters): Pro
 }
 
 export async function updateStatusIfVersionMatches(
-  db: Db,
+  db: DbExecutor,
   id: string,
   expectedVersion: number,
   nextStatus: RequestStatus,
@@ -596,7 +596,7 @@ export async function updateStatusIfVersionMatches(
 }
 
 export async function updateAssigneeIfVersionMatches(
-  db: Db,
+  db: DbExecutor,
   id: string,
   expectedVersion: number,
   nextAssigneeId: string | null,

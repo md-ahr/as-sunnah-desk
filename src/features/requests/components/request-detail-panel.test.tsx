@@ -32,21 +32,33 @@ const request: RequestDetailDto = {
   },
 }
 
+const editablePanelProps = {
+  canEditStatus: true,
+  canEditAssignee: true,
+  assigneeOptions: [{ id: 'user_agent', name: 'Agent User' }],
+} as const
+
+const readOnlyPanelProps = {
+  canEditStatus: false,
+  canEditAssignee: false,
+  assigneeOptions: [{ id: 'user_agent', name: 'Agent User' }],
+} as const
+
 describe('RequestDetailPanel', () => {
   afterEach(() => {
     cleanup()
   })
 
-  it('renders request fields as read-only detail', () => {
-    render(<RequestDetailPanel request={request} />)
+  it('renders request fields with update controls', () => {
+    render(<RequestDetailPanel request={request} {...editablePanelProps} />)
 
     expect(screen.getByRole('heading', { level: 1, name: request.subject })).toBeInTheDocument()
     expect(screen.getByText(request.reference)).toBeInTheDocument()
     expect(screen.getByText(request.description)).toBeInTheDocument()
     expect(screen.getByText('IT Support')).toBeInTheDocument()
-    expect(screen.getByText('In progress')).toBeInTheDocument()
+    expect(screen.getByTestId('status-badge')).toHaveTextContent('In progress')
     expect(screen.getByText('High')).toBeInTheDocument()
-    expect(screen.getByText('Agent User')).toBeInTheDocument()
+    expect(screen.getByRole('combobox', { name: 'Assignee' })).toBeInTheDocument()
     expect(screen.getByText('Viewer User')).toBeInTheDocument()
     expect(screen.getByText('viewer@assunnah.test')).toBeInTheDocument()
     expect(screen.queryByText('Resolved')).not.toBeInTheDocument()
@@ -60,6 +72,7 @@ describe('RequestDetailPanel', () => {
           status: 'resolved',
           resolvedAt: new Date('2026-01-20T12:00:00.000Z'),
         }}
+        {...editablePanelProps}
       />,
     )
 
@@ -67,7 +80,9 @@ describe('RequestDetailPanel', () => {
   })
 
   it('has no accessibility violations', async () => {
-    const { container } = render(<RequestDetailPanel request={request} />)
+    const { container } = render(
+      <RequestDetailPanel request={request} {...readOnlyPanelProps} />,
+    )
     const results = await axe(container)
     expect(results.violations).toEqual([])
   })

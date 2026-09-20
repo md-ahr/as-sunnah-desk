@@ -1,4 +1,4 @@
-import type { RequestStatus } from '@/server/db/schema'
+import type { RequestStatus } from '@/lib/search-params/request-enums'
 
 export const STATUS_TRANSITIONS = {
   new: ['in_review', 'rejected'],

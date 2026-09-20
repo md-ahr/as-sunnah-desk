@@ -149,7 +149,7 @@ as-sunnah-desk/
 │  │  │  └─ reference.repository.ts
 │  │  ├─ services/
 │  │  │  ├─ request.service.ts
-│  │  │  ├─ request-status.machine.ts
+│  │  │  ├─ request-permissions.service.ts
 │  │  │  └─ idempotency.ts
 │  │  ├─ auth/
 │  │  │  ├─ session.ts            # iron-session seal/unseal
@@ -162,6 +162,7 @@ as-sunnah-desk/
 │  │  └─ env.ts                   # Zod-parsed environment
 │  │
 │  ├─ lib/
+│  │  ├─ request-status.ts        # status state machine (shared by UI + service)
 │  │  ├─ summarize-activity/      # the advanced-JS utility
 │  │  ├─ result.ts                # Result<T, E>
 │  │  ├─ hooks/

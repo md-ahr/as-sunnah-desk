@@ -20,8 +20,14 @@ export function messageFor(error: AppError): string {
       }
       return 'That status change is not allowed.'
     }
-    case 'CONFLICT':
+    case 'CONFLICT': {
+      const currentStatus = error.details?.currentStatus
+      if (typeof currentStatus === 'string') {
+        return `This request was changed by someone else. It is now ${statusLabel(currentStatus as RequestStatus)}.`
+      }
+
       return 'This request was changed by someone else.'
+    }
     case 'RATE_LIMITED':
       return 'Too many updates. Please wait and try again.'
     default:

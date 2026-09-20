@@ -215,6 +215,26 @@ type GeneratedRequest = {
   resolvedAt: Date | null
 }
 
+const MUTATION_FIXTURES: Partial<
+  Record<
+    number,
+    {
+      subject: string
+      status: RequestStatus
+      assigneeId: string | null
+    }
+  >
+> = {
+  900: { subject: 'Mutation fixture: status update', status: 'new', assigneeId: 'user_agent' },
+  901: { subject: 'Mutation fixture: assignee update', status: 'new', assigneeId: null },
+  902: { subject: 'Mutation fixture: failure rollback', status: 'new', assigneeId: 'user_agent' },
+  903: { subject: 'Mutation fixture: conflict recovery', status: 'new', assigneeId: 'user_agent' },
+  904: { subject: 'Mutation fixture: duplicate submit', status: 'new', assigneeId: 'user_agent' },
+  905: { subject: 'Mutation fixture: consecutive status', status: 'new', assigneeId: 'user_agent' },
+  906: { subject: 'Mutation fixture: dashboard status', status: 'new', assigneeId: 'user_agent' },
+  907: { subject: 'Mutation fixture: assignee keyboard', status: 'new', assigneeId: null },
+}
+
 function buildRequests(
   assignableUserIds: readonly string[],
   requesterIds: readonly string[],
@@ -225,12 +245,14 @@ function buildRequests(
 
   for (let sequence = 1; sequence <= REQUEST_COUNT; sequence += 1) {
     const createdAt = weekdayBiasedDate(start, end)
-    const status = weightedPick(STATUS_WEIGHTS)
+    const fixture = MUTATION_FIXTURES[sequence]
+    const status = fixture?.status ?? weightedPick(STATUS_WEIGHTS)
     const priority = weightedPick(PRIORITY_WEIGHTS)
     const category = faker.helpers.arrayElement(FIXED_CATEGORIES)
     const requesterId = faker.helpers.arrayElement(requesterIds)
     const assigneeId =
-      faker.number.float() < 0.15 ? null : faker.helpers.arrayElement([...assignableUserIds])
+      fixture?.assigneeId ??
+      (faker.number.float() < 0.15 ? null : faker.helpers.arrayElement([...assignableUserIds]))
 
     const updatedAt = new Date(
       createdAt.getTime() + faker.number.int({ min: 1, max: 21 }) * 86_400_000,
@@ -242,7 +264,8 @@ function buildRequests(
 
     const reference = formatReference(sequence)
     const subject =
-      sequence === 142
+      fixture?.subject ??
+      (sequence === 142
         ? 'Laptop replacement for new staff member'
         : faker.helpers.arrayElement([
             'Unable to access shared drive',
@@ -253,7 +276,7 @@ function buildRequests(
             'Visitor badge not working',
             'Software license renewal',
             faker.lorem.sentence({ min: 4, max: 8 }),
-          ])
+          ]))
 
     requests.push({
       id: uuidv7({ msecs: createdAt.getTime() }),

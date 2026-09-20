@@ -120,7 +120,7 @@ Every `it` block follows **Arrange → Act → Assert**. Use blank lines or comm
 
 ```ts
 import { describe, it, expect } from 'vitest'
-import { canTransition } from '@/server/services/request-status.machine'
+import { canTransition } from '@/lib/request-status'
 
 describe('canTransition', () => {
   it('allows new → in_review', () => {

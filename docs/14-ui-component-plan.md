@@ -109,7 +109,7 @@ These are **your** components under `src/features/` and `src/components/`. They 
 |---|---|---|---|
 | `request-columns.ts` | Shared module | Column ids, labels, sort keys, responsive visibility — **not** a UI component | 3 |
 | `RequestTable` | Server | semantic `<table>` driven by `request-columns.ts`; `<caption>`, `aria-sort` | 3 |
-| `RequestRow` | Server | `<tr>` / card cells; `StatusBadge` (read-only until Phase 5), link to detail | 3 |
+| `RequestRow` | Server | `<tr>` / card cells; `RowStatusControl` in the status cell, link to detail | 3 / 5 |
 | `PerPageSelect` | Client | `select` — URL `perPage` 10 / 25 / 50 / 100; clears `cursor` on change | 3 |
 | `RequestTableSkeleton` | Server | `skeleton` rows matching real geometry | 3 |
 | `SearchInput` | Client | `input`; `useDebouncedCallback` (300 ms) → URL | 3 |
@@ -203,8 +203,8 @@ These are **your** components under `src/features/` and `src/components/`. They 
 
 ### Phase 5
 
-- [ ] `StatusControl`, `AssigneeControl`, toast messages per `AppError` code
-- [ ] `tooltip` on disabled controls when `canEdit` is false
+- [x] `StatusControl`, `AssigneeControl`, toast messages per `AppError` code
+- [x] `tooltip` on disabled controls when `canEdit` is false
 
 ### Phase 6
 

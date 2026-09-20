@@ -15,16 +15,14 @@ import {
 } from '@/components/ui/combobox'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { updateAssignee } from '@/features/requests/actions/update-assignee'
+import { useMutationVersion } from '@/features/requests/hooks/use-mutation-version'
 import { messageFor, successMessageForAssignee } from '@/features/requests/lib/messages'
-import type { AssigneeOption } from '@/features/requests/types'
+import type { AssigneeOption, RequestUpdateResultDto } from '@/features/requests/types'
+import type { Result } from '@/lib/result'
 import { cn } from '@/lib/utils'
 
 const UNASSIGNED_VALUE = '__unassigned__'
-
-type AssigneeItem = {
-  readonly id: string
-  readonly name: string
-}
+const VIRTUAL_THRESHOLD = 50
 
 type AssigneeControlProps = {
   requestId: string
@@ -44,13 +42,20 @@ export function AssigneeControl({
   disabledReason = 'You do not have permission to change the assignee.',
 }: AssigneeControlProps) {
   const [optimisticAssignee, setOptimisticAssignee] = useOptimistic(assignee)
+  const { getVersion, setVersion } = useMutationVersion(requestId, version)
   const [isPending, startTransition] = useTransition()
+  const inFlightRef = useRef<{ key: string; target: string | null } | null>(null)
   const anchorRef = useComboboxAnchor()
 
-  const items = useMemo<AssigneeItem[]>(
-    () => [{ id: UNASSIGNED_VALUE, name: 'Unassigned' }, ...options],
-    [options],
-  )
+  const labelsByValue = useMemo(() => {
+    const labels = new Map<string, string>([[UNASSIGNED_VALUE, 'Unassigned']])
+    for (const option of options) {
+      labels.set(option.id, option.name)
+    }
+    return labels
+  }, [options])
+
+  const values = useMemo(() => [UNASSIGNED_VALUE, ...options.map((option) => option.id)], [options])
 
   const selectedValue = optimisticAssignee?.id ?? UNASSIGNED_VALUE
   const selectedLabel = optimisticAssignee?.name ?? 'Unassigned'
@@ -70,27 +75,40 @@ export function AssigneeControl({
       return
     }
 
+    const idempotencyKey =
+      inFlightRef.current?.target === nextAssigneeId
+        ? inFlightRef.current.key
+        : crypto.randomUUID()
+    inFlightRef.current = { key: idempotencyKey, target: nextAssigneeId }
+
     startTransition(async () => {
       setOptimisticAssignee(nextAssignee)
 
-      const result = await updateAssignee({
-        id: requestId,
-        assigneeId: nextAssigneeId,
-        version,
-        idempotencyKey: crypto.randomUUID(),
-      })
-
-      if (!result.ok) {
-        toast.error(messageFor(result.error), {
-          action:
-            result.error.code === 'CONFLICT'
-              ? { label: 'Reload', onClick: () => window.location.reload() }
-              : undefined,
+      try {
+        const result: Result<RequestUpdateResultDto> = await updateAssignee({
+          id: requestId,
+          assigneeId: nextAssigneeId,
+          version: getVersion(),
+          idempotencyKey,
         })
-        return
-      }
 
-      toast.success(successMessageForAssignee(result.data.assignee?.name ?? null))
+        if (!result.ok) {
+          toast.error(messageFor(result.error), {
+            action:
+              result.error.code === 'CONFLICT'
+                ? { label: 'Reload', onClick: () => { window.location.reload() } }
+                : undefined,
+          })
+          return
+        }
+
+        setVersion(result.data.version)
+        toast.success(successMessageForAssignee(result.data.assignee?.name ?? null))
+      } catch {
+        toast.error('The assignee update could not be completed.')
+      } finally {
+        inFlightRef.current = null
+      }
     })
   }
 
@@ -111,33 +129,64 @@ export function AssigneeControl({
 
   return (
     <div ref={anchorRef} className="max-w-xs">
-      <Combobox
-        value={selectedValue}
-        onValueChange={onValueChange}
-        disabled={isPending}
-        items={items}
-        itemToStringLabel={(item) => item.name}
-        itemToStringValue={(item) => item.id}
-      >
+      <Combobox value={selectedValue} onValueChange={onValueChange} disabled={isPending}>
         <ComboboxInput
           aria-label="Assignee"
           placeholder={selectedLabel}
+          showTrigger={false}
           showClear={false}
           className="w-full"
         />
         <ComboboxContent anchor={anchorRef}>
-          <VirtualizedAssigneeList items={items} />
+          <AssigneeOptionsList
+            values={values}
+            labelsByValue={labelsByValue}
+            virtualized={values.length > VIRTUAL_THRESHOLD}
+          />
         </ComboboxContent>
       </Combobox>
     </div>
   )
 }
 
-function VirtualizedAssigneeList({ items }: { items: readonly AssigneeItem[] }) {
+function AssigneeOptionsList({
+  values,
+  labelsByValue,
+  virtualized,
+}: {
+  values: readonly string[]
+  labelsByValue: ReadonlyMap<string, string>
+  virtualized: boolean
+}) {
+  if (!virtualized) {
+    return (
+      <ComboboxList>
+        {values.map((value) => (
+          <ComboboxItem key={value} value={value}>
+            {labelsByValue.get(value) ?? value}
+          </ComboboxItem>
+        ))}
+        <ComboboxEmpty>No assignees found</ComboboxEmpty>
+      </ComboboxList>
+    )
+  }
+
+  return <VirtualizedAssigneeOptionsList values={values} labelsByValue={labelsByValue} />
+}
+
+function VirtualizedAssigneeOptionsList({
+  values,
+  labelsByValue,
+}: {
+  values: readonly string[]
+  labelsByValue: ReadonlyMap<string, string>
+}) {
   const listRef = useRef<HTMLDivElement>(null)
 
+  // TanStack Virtual returns unstable function refs; safe here in an isolated list renderer.
+  // eslint-disable-next-line react-hooks/incompatible-library -- large assignee lists need virtualization
   const virtualizer = useVirtualizer({
-    count: items.length,
+    count: values.length,
     getScrollElement: () => listRef.current,
     estimateSize: () => 32,
     overscan: 8,
@@ -153,15 +202,15 @@ function VirtualizedAssigneeList({ items }: { items: readonly AssigneeItem[] }) 
           }}
         >
           {virtualizer.getVirtualItems().map((virtualRow) => {
-            const item = items[virtualRow.index]
-            if (!item) {
+            const value = values[virtualRow.index]
+            if (!value) {
               return null
             }
 
             return (
               <ComboboxItem
-                key={item.id}
-                value={item}
+                key={value}
+                value={value}
                 style={{
                   position: 'absolute',
                   top: 0,
@@ -170,7 +219,7 @@ function VirtualizedAssigneeList({ items }: { items: readonly AssigneeItem[] }) 
                   transform: `translateY(${String(virtualRow.start)}px)`,
                 }}
               >
-                {item.name}
+                {labelsByValue.get(value) ?? value}
               </ComboboxItem>
             )
           })}

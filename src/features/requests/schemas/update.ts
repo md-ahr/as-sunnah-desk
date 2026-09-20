@@ -6,19 +6,15 @@ export const updateStatusSchema = z.object({
   id: z.string().min(1),
   status: z.enum(REQUEST_STATUSES),
   version: z.number().int().nonnegative(),
-  idempotencyKey: z.string().uuid(),
+  idempotencyKey: z.uuid(),
 })
-
-export type UpdateStatusInput = z.infer<typeof updateStatusSchema>
 
 export const updateAssigneeSchema = z.object({
   id: z.string().min(1),
   assigneeId: z.string().min(1).nullable(),
   version: z.number().int().nonnegative(),
-  idempotencyKey: z.string().uuid(),
+  idempotencyKey: z.uuid(),
 })
-
-export type UpdateAssigneeInput = z.infer<typeof updateAssigneeSchema>
 
 function validationFields(error: z.ZodError): Record<string, string[]> {
   const fields: Record<string, string[]> = {}

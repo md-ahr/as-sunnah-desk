@@ -8,6 +8,13 @@ import { ActivityTimelineSkeleton } from '@/features/activity/components/activit
 import { RequestActivitySection } from '@/features/activity/components/activity-timeline'
 import { RequestDetailPanel } from '@/features/requests/components/request-detail-panel'
 import { loadRequestByReference } from '@/features/requests/lib/load-request'
+import { getFilterOptions } from '@/server/services/reference.service'
+import {
+  canUpdateRequestAssignee,
+  canUpdateRequestStatus,
+  getAssigneeOptionsForUser,
+} from '@/server/services/request-permissions.service'
+import { getCurrentUser } from '@/server/services/session.service'
 
 export async function generateRequestDetailMetadata(
   params: Promise<{ id: string }>,
@@ -30,11 +37,17 @@ export async function generateRequestDetailMetadata(
 
 export async function RequestDetail({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const request = await loadRequestByReference(id)
+  const [request, user, filterOptions] = await Promise.all([
+    loadRequestByReference(id),
+    getCurrentUser(),
+    getFilterOptions(),
+  ])
 
   if (!request) {
     notFound()
   }
+
+  const assigneeOptions = getAssigneeOptionsForUser(user, filterOptions.assignees)
 
   return (
     <div className="space-y-8">
@@ -46,7 +59,12 @@ export async function RequestDetail({ params }: { params: Promise<{ id: string }
           Back to all requests
         </Link>
       </p>
-      <RequestDetailPanel request={request} />
+      <RequestDetailPanel
+        request={request}
+        canEditStatus={canUpdateRequestStatus(user, request)}
+        canEditAssignee={canUpdateRequestAssignee(user, request)}
+        assigneeOptions={assigneeOptions}
+      />
       <ActivityTimelineErrorBoundary>
         <Suspense fallback={<ActivityTimelineSkeleton />}>
           <RequestActivitySection requestId={request.id} />

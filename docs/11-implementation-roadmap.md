@@ -727,73 +727,73 @@ Depends on Phase 3 (dashboard rows) and Phase 4 (detail panel).
 
 ### 5.1 · Status state machine
 
-- [ ] `src/server/services/request-status.machine.ts` — valid transitions only
-- [ ] Exhaustive N×N unit test
+- [x] `src/lib/request-status.ts` — valid transitions only
+- [x] Exhaustive N×N unit test
 
 
 
 ### 5.2 · Repository write paths
 
-- [ ] `updateStatusIfVersionMatches` — optimistic concurrency
-- [ ] `updateAssigneeIfVersionMatches` — same pattern
-- [ ] Activity row insert in same transaction as update
+- [x] `updateStatusIfVersionMatches` — optimistic concurrency
+- [x] `updateAssigneeIfVersionMatches` — same pattern
+- [x] Activity row insert in same transaction as update
 
 
 
 ### 5.3 · Idempotency
 
-- [ ] `src/server/services/idempotency.ts` — store key; unique violation → "already applied"
-- [ ] Integration test: replay returns original result, one activity row
+- [x] `src/server/services/idempotency.ts` — store key; unique violation → "already applied"
+- [x] Integration test: replay returns original result, one activity row
 
 
 
 ### 5.4 · Request service (write path)
 
-- [ ] Full transaction: version check → update → activity → `resolved_at` when closing
-- [ ] Return typed `Result` / `AppError` codes
+- [x] Full transaction: version check → update → activity → `resolved_at` when transitioning to `resolved`
+- [x] Return typed `Result` / `AppError` codes
 
 
 
 ### 5.5 · Server Actions
 
-- [ ] `src/features/requests/schemas/update.ts`
-- [ ] `update-status.ts`, `update-assignee.ts` — four-step preamble each
-- [ ] Client-generated `idempotencyKey` in payload
+- [x] `src/features/requests/schemas/update.ts`
+- [x] `update-status.ts`, `update-assignee.ts` — four-step preamble each
+- [x] Client-generated `idempotencyKey` in payload
 
 
 
 ### 5.6 · UI controls
 
-- [ ] `StatusControl` — dashboard row **and** detail panel; `useOptimistic` + `useTransition`
-- [ ] `RowStatusControl` — thin wrapper for table cell
-- [ ] `AssigneeControl` — **detail only**; `combobox` + `@tanstack/react-virtual`
-- [ ] `tooltip` when `canEdit` is false
-- [ ] `sonner` toasts mapped from `AppError` codes
+- [x] `StatusControl` — dashboard row **and** detail panel; `useOptimistic` + `useTransition`
+- [x] `RowStatusControl` — thin wrapper for table cell
+- [x] `AssigneeControl` — **detail only**; `combobox` + `@tanstack/react-virtual`
+- [x] `tooltip` when `canEdit` is false
+- [x] `sonner` toasts mapped from `AppError` codes
 
 
 
 ### 5.7 · Cache invalidation
 
-- [ ] `updateTag` / `revalidateTag` on successful write — list + detail tags
-- [ ] Conflict UX: show server value + reload action
+- [x] `updateTag` / `revalidateTag` on successful write — request, activity, and facet-count tags
+- [x] Conflict UX: show server value + reload action
 
 
 
 ### 5.8 · Tests
 
-- [ ] E2E: `update-status.spec.ts`, `update-assignee.spec.ts`, `update-failure.spec.ts`,
+- [x] E2E: `update-status.spec.ts`, `update-assignee.spec.ts`, `update-failure.spec.ts`,
   ```
   `conflict.spec.ts`, `duplicate-submit.spec.ts`, `access-control.spec.ts`
   ```
-- [ ] Integration: version mismatch, idempotency replay
+- [x] Integration: version mismatch, idempotency replay
 
 
 
 ### Done when
 
-- [ ] Optimistic update visible before response; failure rolls back
-- [ ] Two browser contexts → conflict, not silent overwrite
-- [ ] Double-click → exactly one activity entry
+- [x] Optimistic update visible before response; failure rolls back
+- [x] Two browser contexts → conflict, not silent overwrite
+- [x] Double-click → exactly one activity entry
 
 This phase is worth over-investing in — largest gap between demo and production-minded work.
 

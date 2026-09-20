@@ -1,10 +1,7 @@
 import 'server-only'
 
-import { ok } from '@/lib/result'
 import type { Result } from '@/lib/result'
 import { findByIdempotencyKey } from '@/server/repositories/activity.repository'
-import { getById } from '@/server/repositories/request.repository'
-import type { RequestDetail } from '@/server/repositories/request.repository'
 
 function isUniqueConstraintError(error: unknown): boolean {
   if (!(error instanceof Error)) {
@@ -15,18 +12,17 @@ function isUniqueConstraintError(error: unknown): boolean {
   return message.includes('unique constraint') || message.includes('unique')
 }
 
-export async function withIdempotency<T extends RequestDetail>(
+export async function withIdempotency<T>(
   key: string,
   operation: () => Promise<Result<T>>,
+  replay: () => Promise<Result<T> | null>,
 ): Promise<Result<T>> {
   const existing = await findByIdempotencyKey(key)
   if (existing) {
-    const request = await getById(existing.requestId)
-    if (!request) {
-      return operation()
+    const replayed = await replay()
+    if (replayed) {
+      return replayed
     }
-
-    return ok(request as T)
   }
 
   try {
@@ -36,16 +32,11 @@ export async function withIdempotency<T extends RequestDetail>(
       throw error
     }
 
-    const replay = await findByIdempotencyKey(key)
-    if (!replay) {
+    const replayed = await replay()
+    if (!replayed) {
       throw error
     }
 
-    const request = await getById(replay.requestId)
-    if (!request) {
-      throw error
-    }
-
-    return ok(request as T)
+    return replayed
   }
 }

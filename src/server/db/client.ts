@@ -13,6 +13,8 @@ export type AppDb = Db & {
   readonly $client: Client
 }
 
+export type DbExecutor = Pick<Db, 'select' | 'insert' | 'update' | 'delete' | 'all' | 'run'>
+
 declare global {
   var __libsqlClient: Client | undefined
 

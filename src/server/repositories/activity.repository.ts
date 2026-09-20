@@ -2,7 +2,7 @@ import 'server-only'
 
 import { asc, eq } from 'drizzle-orm'
 
-import type { Db } from '@/server/db/client'
+import type { Db, DbExecutor } from '@/server/db/client'
 import { getDb } from '@/server/db/client'
 import { requestActivities, users } from '@/server/db/schema'
 import type { ActivityType } from '@/server/db/schema'
@@ -91,7 +91,7 @@ export async function findByIdempotencyKey(
 
 export async function insertActivity(
   activity: ActivityInsert,
-  db: Db = getDb(),
+  db: DbExecutor = getDb(),
 ): Promise<void> {
   await db.insert(requestActivities).values(activity)
 }

@@ -47,5 +47,14 @@ export type RequestDetailDto = RequestListItemDto & {
   readonly description: string
   readonly createdAt: Date
   readonly resolvedAt: Date | null
+}
+
+export type RequestUpdateResultDto = {
+  readonly id: string
+  readonly reference: string
+  readonly status: RequestStatus
   readonly version: number
+  readonly assignee: AssigneeOption | null
+  readonly resolvedAt: string | null
+  readonly updatedAt: string
 }

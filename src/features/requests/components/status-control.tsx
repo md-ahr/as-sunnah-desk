@@ -1,6 +1,6 @@
 'use client'
 
-import { useId, useOptimistic, useTransition } from 'react'
+import { useId, useOptimistic, useRef, useTransition } from 'react'
 import { toast } from 'sonner'
 
 import {
@@ -11,11 +11,14 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { updateStatus } from '@/features/requests/actions/update-status'
+import { useMutationVersion } from '@/features/requests/hooks/use-mutation-version'
 import { messageFor, successMessageForStatus } from '@/features/requests/lib/messages'
 import { statusLabel } from '@/features/requests/lib/labels'
 import { StatusBadge } from '@/features/requests/components/status-badge'
+import type { RequestUpdateResultDto } from '@/features/requests/types'
+import { allowedTransitions } from '@/lib/request-status'
 import type { RequestStatus } from '@/lib/search-params/request-enums'
-import { allowedTransitions } from '@/server/services/request-status.machine'
+import type { Result } from '@/lib/result'
 import { cn } from '@/lib/utils'
 
 type StatusControlProps = {
@@ -36,7 +39,9 @@ export function StatusControl({
   className,
 }: StatusControlProps) {
   const [optimisticStatus, setOptimisticStatus] = useOptimistic(status)
+  const { getVersion, setVersion } = useMutationVersion(requestId, version)
   const [isPending, startTransition] = useTransition()
+  const inFlightRef = useRef<{ key: string; target: RequestStatus } | null>(null)
   const labelId = useId()
   const options = allowedTransitions(optimisticStatus)
 
@@ -45,27 +50,43 @@ export function StatusControl({
       return
     }
 
+    const idempotencyKey =
+      inFlightRef.current?.target === next ? inFlightRef.current.key : crypto.randomUUID()
+    inFlightRef.current = { key: idempotencyKey, target: next }
+
     startTransition(async () => {
       setOptimisticStatus(next)
 
-      const result = await updateStatus({
-        id: requestId,
-        status: next,
-        version,
-        idempotencyKey: crypto.randomUUID(),
-      })
-
-      if (!result.ok) {
-        toast.error(messageFor(result.error), {
-          action:
-            result.error.code === 'CONFLICT'
-              ? { label: 'Reload', onClick: () => window.location.reload() }
-              : undefined,
+      try {
+        const result: Result<RequestUpdateResultDto> = await updateStatus({
+          id: requestId,
+          status: next,
+          version: getVersion(),
+          idempotencyKey,
         })
-        return
-      }
 
-      toast.success(successMessageForStatus(next))
+        if (!result.ok) {
+          toast.error(messageFor(result.error), {
+            action:
+              result.error.code === 'CONFLICT'
+                ? {
+                    label: 'Reload',
+                    onClick: () => {
+                      window.location.reload()
+                    },
+                  }
+                : undefined,
+          })
+          return
+        }
+
+        setVersion(result.data.version)
+        toast.success(successMessageForStatus(next))
+      } catch {
+        toast.error('The status update could not be completed.')
+      } finally {
+        inFlightRef.current = null
+      }
     })
   }
 
@@ -85,14 +106,14 @@ export function StatusControl({
   return (
     <>
       <span id={labelId} className="sr-only">
-        Status for request {requestId}
+        Change status, currently {statusLabel(optimisticStatus)}
       </span>
       <DropdownMenu>
         <DropdownMenuTrigger
           aria-labelledby={labelId}
           disabled={isPending || options.length === 0}
           className={cn(
-            'inline-flex rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring',
+            'focus-visible:ring-ring inline-flex rounded-md outline-none focus-visible:ring-2',
             isPending && 'opacity-70',
           )}
         >
@@ -100,7 +121,12 @@ export function StatusControl({
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start">
           {options.map((option) => (
-            <DropdownMenuItem key={option} onClick={() => onSelect(option)}>
+            <DropdownMenuItem
+              key={option}
+              onClick={() => {
+                onSelect(option)
+              }}
+            >
               {statusLabel(option)}
             </DropdownMenuItem>
           ))}

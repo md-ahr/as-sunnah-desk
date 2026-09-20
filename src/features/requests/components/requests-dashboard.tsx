@@ -60,7 +60,7 @@ export async function RequestsDashboard({ searchParams }: RequestsDashboardProps
         </div>
 
         <RefiningResultsShell>
-          <RequestTable rows={page.items} params={params} total={total} />
+          <RequestTable rows={page.items} params={params} total={total} user={user} />
 
           <Pagination
             params={params}

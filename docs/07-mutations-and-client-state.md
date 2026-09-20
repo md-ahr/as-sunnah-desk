@@ -62,7 +62,7 @@ flowchart TD
 import { useOptimistic, useTransition, useId } from 'react'
 import { toast } from 'sonner'
 import { updateStatus } from '../actions/update-status'
-import { allowedTransitions } from '@/server/services/request-status.machine'
+import { allowedTransitions } from '@/lib/request-status'
 
 type Props = {
   requestId: string
@@ -125,7 +125,7 @@ Details that matter:
 
 **Options come from the state machine**, so an illegal transition is not offered. The server still validates — the UI is convenience, not enforcement — but the user never encounters a rejection they could not have predicted.
 
-**`disabled` covers `!canEdit` as well as `isPending`**, so a viewer sees the control in a disabled state rather than a broken interaction.
+**`disabled` covers `isPending`**, so a double-click cannot queue a second write. When `canEdit` is false the dropdown is omitted and a tooltip explains why — a viewer sees a badge, not a broken interaction.
 
 **A conflict gets a recovery action**, not just a message. "Someone else changed this request" is useless without a way forward.
 

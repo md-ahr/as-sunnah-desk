@@ -10,7 +10,7 @@ export function ActivityEntry({ entry }: ActivityEntryProps) {
   const absolute = formatAbsoluteTime(entry.createdAt)
 
   return (
-    <li className="relative pl-6">
+    <li className="relative pl-6" data-testid="activity-entry">
       <span aria-hidden="true" className="bg-border absolute top-1.5 left-0 size-2 rounded-full" />
       <p className="text-sm">
         <span className="font-medium">{entry.actor.name}</span>{' '}

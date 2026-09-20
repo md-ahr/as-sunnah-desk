@@ -102,7 +102,7 @@ stateDiagram-v2
 Encoded as data, not as branching logic:
 
 ```ts
-// server/services/request-status.machine.ts
+// lib/request-status.ts
 export const STATUS_TRANSITIONS = {
   new:         ['in_review', 'rejected'],
   in_review:   ['in_progress', 'rejected'],

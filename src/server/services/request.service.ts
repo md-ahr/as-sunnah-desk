@@ -1,6 +1,6 @@
 import 'server-only'
 
-import { cacheLife, cacheTag, revalidateTag, updateTag } from 'next/cache'
+import { cacheLife, cacheTag } from 'next/cache'
 import { v7 as uuidv7 } from 'uuid'
 
 import type { SearchParams } from '@/lib/search-params/schema'
@@ -11,14 +11,12 @@ import type { AuthenticatedUser } from '@/server/auth/dal'
 import { can } from '@/server/auth/permissions'
 import { tags } from '@/server/cache/tags'
 import { getDb } from '@/server/db/client'
-import type { RequestStatus } from '@/server/db/schema'
 import type { CategoryDto } from '@/server/repositories/reference.repository'
 import { listAssignableUsers } from '@/server/repositories/reference.repository'
 import {
-  countActivitiesByRequestId,
   insertActivity,
+  listActivitiesByRequestId,
 } from '@/server/repositories/activity.repository'
-import { listActivitiesByRequestId } from '@/server/repositories/activity.repository'
 import type { ActivityListItem } from '@/server/repositories/activity.repository'
 import type {
   FacetCounts,
@@ -38,36 +36,19 @@ import {
   updateStatusIfVersionMatches,
 } from '@/server/repositories/request.repository'
 import { withIdempotency } from '@/server/services/idempotency'
-import { canTransition } from '@/server/services/request-status.machine'
+import type {
+  RequestUpdateResult,
+  UpdateAssigneeInput,
+  UpdateStatusInput,
+} from '@/server/services/request-update.types'
+import { canTransition } from '@/lib/request-status'
 import {
   canAssignToUser,
   canUpdateRequestAssignee,
   canUpdateRequestStatus,
 } from '@/server/auth/request-permissions'
 
-export type UpdateStatusInput = {
-  readonly id: string
-  readonly status: RequestStatus
-  readonly version: number
-  readonly idempotencyKey: string
-}
-
-export type UpdateAssigneeInput = {
-  readonly id: string
-  readonly assigneeId: string | null
-  readonly version: number
-  readonly idempotencyKey: string
-}
-
-export type RequestUpdateResult = {
-  readonly id: string
-  readonly reference: string
-  readonly status: RequestStatus
-  readonly version: number
-  readonly assignee: { readonly id: string; readonly name: string } | null
-  readonly resolvedAt: Date | null
-  readonly updatedAt: Date
-}
+export type { RequestUpdateResult, UpdateAssigneeInput, UpdateStatusInput }
 
 export type { ActivityListItem, RequestDetail }
 
@@ -208,179 +189,181 @@ function toUpdateResult(request: RequestDetail): RequestUpdateResult {
   }
 }
 
-function invalidateAfterUpdate(requestId: string): void {
-  updateTag(tags.request(requestId))
-  updateTag(tags.requestActivity(requestId))
-  revalidateTag(tags.facetCounts(), 'max')
+function replayUpdate(requestId: string): Promise<Result<RequestUpdateResult> | null> {
+  return getById(requestId).then((request) => (request ? ok(toUpdateResult(request)) : null))
 }
 
 export async function updateStatus(
   user: AuthenticatedUser,
   input: UpdateStatusInput,
 ): Promise<Result<RequestUpdateResult>> {
-  return withIdempotency(input.idempotencyKey, async () => {
-    const request = await getById(input.id)
-    if (!request) {
-      return err(appError('NOT_FOUND', 'Request not found.'))
-    }
-
-    if (!canUpdateRequestStatus(user, request)) {
-      return err(appError('FORBIDDEN', 'You do not have permission to update this request.'))
-    }
-
-    if (request.status === input.status) {
-      return ok(toUpdateResult(request))
-    }
-
-    if (!canTransition(request.status, input.status)) {
-      return err(
-        appError('INVALID_TRANSITION', 'That status change is not allowed.', {
-          from: request.status,
-          to: input.status,
-        }),
-      )
-    }
-
-    const now = new Date()
-    const db = getDb()
-
-    const updated = await db.transaction(async (tx) => {
-      const next = await updateStatusIfVersionMatches(
-        tx,
-        input.id,
-        input.version,
-        input.status,
-        now,
-      )
-
-      if (!next) {
-        return null
-      }
-
-      await insertActivity(
-        {
-          id: uuidv7({ msecs: now.getTime() }),
-          requestId: input.id,
-          actorId: user.id,
-          type: 'status_changed',
-          field: 'status',
-          fromValue: request.status,
-          toValue: input.status,
-          comment: null,
-          idempotencyKey: input.idempotencyKey,
-          createdAt: now,
-        },
-        tx,
-      )
-
-      return next
-    })
-
-    if (!updated) {
-      const current = await getById(input.id)
-      if (!current) {
+  return withIdempotency<RequestUpdateResult>(
+    input.idempotencyKey,
+    async () => {
+      const request = await getById(input.id)
+      if (!request) {
         return err(appError('NOT_FOUND', 'Request not found.'))
       }
 
-      return err(
-        appError('CONFLICT', 'This request was changed by someone else.', {
-          currentStatus: current.status,
-          currentVersion: current.version,
-          currentAssignee: current.assignee,
-        }),
-      )
-    }
+      if (!canUpdateRequestStatus(user, request)) {
+        return err(appError('FORBIDDEN', 'You do not have permission to update this request.'))
+      }
 
-    invalidateAfterUpdate(input.id)
-    return ok(toUpdateResult(updated))
-  })
+      if (request.status === input.status) {
+        return ok(toUpdateResult(request))
+      }
+
+      if (!canTransition(request.status, input.status)) {
+        return err(
+          appError('INVALID_TRANSITION', 'That status change is not allowed.', {
+            from: request.status,
+            to: input.status,
+          }),
+        )
+      }
+
+      const now = new Date()
+      const db = getDb()
+
+      const updated = await db.transaction(async (tx) => {
+        const next = await updateStatusIfVersionMatches(
+          tx,
+          input.id,
+          input.version,
+          input.status,
+          now,
+        )
+
+        if (!next) {
+          return null
+        }
+
+        await insertActivity(
+          {
+            id: uuidv7({ msecs: now.getTime() }),
+            requestId: input.id,
+            actorId: user.id,
+            type: 'status_changed',
+            field: 'status',
+            fromValue: request.status,
+            toValue: input.status,
+            comment: null,
+            idempotencyKey: input.idempotencyKey,
+            createdAt: now,
+          },
+          tx,
+        )
+
+        return next
+      })
+
+      if (!updated) {
+        const current = await getById(input.id)
+        if (!current) {
+          return err(appError('NOT_FOUND', 'Request not found.'))
+        }
+
+        return err(
+          appError('CONFLICT', 'This request was changed by someone else.', {
+            currentStatus: current.status,
+            currentVersion: current.version,
+            currentAssignee: current.assignee,
+          }),
+        )
+      }
+
+      return ok(toUpdateResult(updated))
+    },
+    () => replayUpdate(input.id),
+  )
 }
 
 export async function updateAssignee(
   user: AuthenticatedUser,
   input: UpdateAssigneeInput,
 ): Promise<Result<RequestUpdateResult>> {
-  return withIdempotency(input.idempotencyKey, async () => {
-    const request = await getById(input.id)
-    if (!request) {
-      return err(appError('NOT_FOUND', 'Request not found.'))
-    }
-
-    if (!canUpdateRequestAssignee(user, request)) {
-      return err(appError('FORBIDDEN', 'You do not have permission to update this request.'))
-    }
-
-    if (!canAssignToUser(user, input.assigneeId)) {
-      return err(appError('FORBIDDEN', 'You do not have permission to assign to that user.'))
-    }
-
-    if (input.assigneeId !== null) {
-      const assignableUsers = await listAssignableUsers()
-      const target = assignableUsers.find((candidate) => candidate.id === input.assigneeId)
-      if (!target) {
-        return err(appError('NOT_FOUND', 'Assignee not found.'))
-      }
-    }
-
-    const currentAssigneeId = request.assignee?.id ?? null
-    if (currentAssigneeId === input.assigneeId) {
-      return ok(toUpdateResult(request))
-    }
-
-    const now = new Date()
-    const db = getDb()
-    const activityType = input.assigneeId === null ? 'unassigned' : 'assigned'
-
-    const updated = await db.transaction(async (tx) => {
-      const next = await updateAssigneeIfVersionMatches(
-        tx,
-        input.id,
-        input.version,
-        input.assigneeId,
-        now,
-      )
-
-      if (!next) {
-        return null
-      }
-
-      await insertActivity(
-        {
-          id: uuidv7({ msecs: now.getTime() }),
-          requestId: input.id,
-          actorId: user.id,
-          type: activityType,
-          field: 'assignee',
-          fromValue: currentAssigneeId,
-          toValue: input.assigneeId,
-          comment: null,
-          idempotencyKey: input.idempotencyKey,
-          createdAt: now,
-        },
-        tx,
-      )
-
-      return next
-    })
-
-    if (!updated) {
-      const current = await getById(input.id)
-      if (!current) {
+  return withIdempotency<RequestUpdateResult>(
+    input.idempotencyKey,
+    async () => {
+      const request = await getById(input.id)
+      if (!request) {
         return err(appError('NOT_FOUND', 'Request not found.'))
       }
 
-      return err(
-        appError('CONFLICT', 'This request was changed by someone else.', {
-          currentStatus: current.status,
-          currentVersion: current.version,
-          currentAssignee: current.assignee,
-        }),
-      )
-    }
+      if (!canUpdateRequestAssignee(user, request)) {
+        return err(appError('FORBIDDEN', 'You do not have permission to update this request.'))
+      }
 
-    invalidateAfterUpdate(input.id)
-    return ok(toUpdateResult(updated))
-  })
+      if (!canAssignToUser(user, input.assigneeId)) {
+        return err(appError('FORBIDDEN', 'You do not have permission to assign to that user.'))
+      }
+
+      if (input.assigneeId !== null) {
+        const assignableUsers = await listAssignableUsers()
+        const target = assignableUsers.find((candidate) => candidate.id === input.assigneeId)
+        if (!target) {
+          return err(appError('NOT_FOUND', 'Assignee not found.'))
+        }
+      }
+
+      const currentAssigneeId = request.assignee?.id ?? null
+      if (currentAssigneeId === input.assigneeId) {
+        return ok(toUpdateResult(request))
+      }
+
+      const now = new Date()
+      const db = getDb()
+      const activityType = input.assigneeId === null ? 'unassigned' : 'assigned'
+
+      const updated = await db.transaction(async (tx) => {
+        const next = await updateAssigneeIfVersionMatches(
+          tx,
+          input.id,
+          input.version,
+          input.assigneeId,
+          now,
+        )
+
+        if (!next) {
+          return null
+        }
+
+        await insertActivity(
+          {
+            id: uuidv7({ msecs: now.getTime() }),
+            requestId: input.id,
+            actorId: user.id,
+            type: activityType,
+            field: 'assignee',
+            fromValue: currentAssigneeId,
+            toValue: input.assigneeId,
+            comment: null,
+            idempotencyKey: input.idempotencyKey,
+            createdAt: now,
+          },
+          tx,
+        )
+
+        return next
+      })
+
+      if (!updated) {
+        const current = await getById(input.id)
+        if (!current) {
+          return err(appError('NOT_FOUND', 'Request not found.'))
+        }
+
+        return err(
+          appError('CONFLICT', 'This request was changed by someone else.', {
+            currentStatus: current.status,
+            currentVersion: current.version,
+            currentAssignee: current.assignee,
+          }),
+        )
+      }
+
+      return ok(toUpdateResult(updated))
+    },
+    () => replayUpdate(input.id),
+  )
 }
-
-export { countActivitiesByRequestId }

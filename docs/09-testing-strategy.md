@@ -31,7 +31,7 @@ Pure functions with no I/O, no framework, and no mocks. These are fast, and they
 | Target | What is asserted |
 |---|---|
 | `lib/summarize-activity/` | Correctness, invalid-record handling, empty input, precision, 100k-record performance. See [10](./10-activity-summary-utility.md) |
-| `request-status.machine.ts` | Every legal transition allowed; every illegal one rejected; `closed` is terminal; exhaustive over the full status matrix |
+| `request-status.ts` | Every legal transition allowed; every illegal one rejected; `closed` is terminal; exhaustive over the full status matrix |
 | `lib/search-params/` | Round-trip parse/serialise; malformed input falls back to defaults; array params; cursor encode/decode; unknown `sort` rejected; unknown category slugs stripped; slug round-trip (`it-support`) |
 | `lib/hooks/use-debounced-callback.ts` | Fires once after delay; cancels pending call on unmount; rapid calls reset the timer |
 | `server/auth/permissions.ts` | Each role's capability set; a capability absent from a role is denied |

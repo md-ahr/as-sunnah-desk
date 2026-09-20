@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { toRoute } from '@/lib/routes'
 import { PriorityBadge } from '@/features/requests/components/priority-badge'
-import { StatusBadge } from '@/features/requests/components/status-badge'
+import { RowStatusControl } from '@/features/requests/components/row-status-control'
 import { formatRelativeTime, initials } from '@/features/requests/lib/labels'
 import { columnMobileHiddenProps, REQUEST_COLUMNS } from '@/features/requests/request-columns'
 import type { RequestListItemDto } from '@/features/requests/types'
@@ -14,9 +14,10 @@ const MOBILE_HIDDEN = new Map(
 
 type RequestRowProps = {
   row: RequestListItemDto
+  canEditStatus: boolean
 }
 
-export function RequestRow({ row }: RequestRowProps) {
+export function RequestRow({ row, canEditStatus }: RequestRowProps) {
   const updatedLabel = formatRelativeTime(row.updatedAt)
   const updatedAbsolute = row.updatedAt.toLocaleString()
 
@@ -55,7 +56,12 @@ export function RequestRow({ row }: RequestRowProps) {
         <PriorityBadge priority={row.priority} />
       </td>
       <td className="px-4 py-3" data-label="Status">
-        <StatusBadge status={row.status} />
+        <RowStatusControl
+          requestId={row.id}
+          status={row.status}
+          version={row.version}
+          canEdit={canEditStatus}
+        />
       </td>
       <td className="px-4 py-3 text-sm" data-label="Assignee" {...MOBILE_HIDDEN.get('assignee')}>
         {row.assignee?.name ?? 'Unassigned'}
