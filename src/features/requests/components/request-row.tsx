@@ -4,7 +4,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { toRoute } from '@/lib/routes'
 import { PriorityBadge } from '@/features/requests/components/priority-badge'
 import { RowStatusControl } from '@/features/requests/components/row-status-control'
-import { formatRelativeTime, initials } from '@/features/requests/lib/labels'
+import { formatAbsoluteTime, formatRelativeTime, initials } from '@/features/requests/lib/labels'
 import { columnMobileHiddenProps, REQUEST_COLUMNS } from '@/features/requests/request-columns'
 import type { RequestListItemDto } from '@/features/requests/types'
 
@@ -15,11 +15,12 @@ const MOBILE_HIDDEN = new Map(
 type RequestRowProps = {
   row: RequestListItemDto
   canEditStatus: boolean
+  now: number
 }
 
-export function RequestRow({ row, canEditStatus }: RequestRowProps) {
-  const updatedLabel = formatRelativeTime(row.updatedAt)
-  const updatedAbsolute = row.updatedAt.toLocaleString()
+export function RequestRow({ row, canEditStatus, now }: RequestRowProps) {
+  const updatedLabel = formatRelativeTime(row.updatedAt, now)
+  const updatedAbsolute = formatAbsoluteTime(row.updatedAt)
 
   return (
     <tr className="request-table-row border-border border-t">

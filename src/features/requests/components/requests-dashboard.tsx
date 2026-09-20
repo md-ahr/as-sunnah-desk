@@ -10,6 +10,7 @@ import { PerPageSelect } from '@/features/requests/components/per-page-select'
 import { RequestTable } from '@/features/requests/components/request-table'
 import { ResultsLiveRegion } from '@/features/requests/components/results-live-region'
 import { SearchInput } from '@/features/requests/components/search-input'
+import { getRequestNow } from '@/features/requests/lib/request-now'
 import { getFilterOptions } from '@/server/services/reference.service'
 import { parseSearchParams } from '@/lib/search-params/schema'
 import { getCurrentUser } from '@/server/services/session.service'
@@ -34,22 +35,25 @@ export async function RequestsDashboard({ searchParams }: RequestsDashboardProps
   }
 
   const { page, total, facets } = result.data
+  const now = await getRequestNow()
 
   return (
     <DashboardNavigationProvider>
       <div className="space-y-6">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <p className="text-sm text-muted-foreground">
+          <p className="text-muted-foreground text-sm">
             {typeof total === 'number' ? `${String(total)} requests` : `${total} requests`}
           </p>
           <PerPageSelect params={params} />
         </div>
 
         <div className="flex flex-col gap-4 xl:flex-row xl:items-start">
-          <Suspense fallback={<div className="h-9 w-full max-w-md animate-pulse rounded-md bg-muted" />}>
+          <Suspense
+            fallback={<div className="bg-muted h-9 w-full max-w-md animate-pulse rounded-md" />}
+          >
             <SearchInput key={params.q ?? ''} params={params} />
           </Suspense>
-          <Suspense fallback={<div className="h-9 w-24 animate-pulse rounded-md bg-muted" />}>
+          <Suspense fallback={<div className="bg-muted h-9 w-24 animate-pulse rounded-md" />}>
             <FilterBar
               params={params}
               categories={filterOptions.categories}
@@ -60,7 +64,7 @@ export async function RequestsDashboard({ searchParams }: RequestsDashboardProps
         </div>
 
         <RefiningResultsShell>
-          <RequestTable rows={page.items} params={params} total={total} user={user} />
+          <RequestTable rows={page.items} params={params} total={total} user={user} now={now} />
 
           <Pagination
             params={params}

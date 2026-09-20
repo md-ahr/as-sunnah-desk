@@ -42,6 +42,7 @@ export function StatusControl({
   const { getVersion, setVersion } = useMutationVersion(requestId, version)
   const [isPending, startTransition] = useTransition()
   const inFlightRef = useRef<{ key: string; target: RequestStatus } | null>(null)
+  const inFlightCountRef = useRef(0)
   const labelId = useId()
   const options = allowedTransitions(optimisticStatus)
 
@@ -53,6 +54,7 @@ export function StatusControl({
     const idempotencyKey =
       inFlightRef.current?.target === next ? inFlightRef.current.key : crypto.randomUUID()
     inFlightRef.current = { key: idempotencyKey, target: next }
+    inFlightCountRef.current += 1
 
     startTransition(async () => {
       setOptimisticStatus(next)
@@ -85,7 +87,10 @@ export function StatusControl({
       } catch {
         toast.error('The status update could not be completed.')
       } finally {
-        inFlightRef.current = null
+        inFlightCountRef.current -= 1
+        if (inFlightCountRef.current === 0) {
+          inFlightRef.current = null
+        }
       }
     })
   }

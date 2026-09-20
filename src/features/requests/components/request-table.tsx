@@ -17,9 +17,10 @@ type RequestTableProps = {
   params: SearchParams
   total: number | `${number}+`
   user: AuthenticatedUser
+  now: number
 }
 
-export function RequestTable({ rows, params, total, user }: RequestTableProps) {
+export function RequestTable({ rows, params, total, user, now }: RequestTableProps) {
   if (rows.length === 0) {
     return <EmptyState hasActiveFilters={hasActiveFilters(params)} />
   }
@@ -27,19 +28,19 @@ export function RequestTable({ rows, params, total, user }: RequestTableProps) {
   const totalLabel = typeof total === 'number' ? `${String(total)} results` : `${total} results`
 
   return (
-    <div className="request-table-shell overflow-hidden rounded-lg border border-border">
+    <div className="request-table-shell border-border overflow-hidden rounded-lg border">
       <table className="request-table w-full">
         <caption className="sr-only">
           Service requests, sorted by {params.sort.replaceAll('_', ' ')}. {totalLabel}.
         </caption>
-        <thead className="request-table-head hidden bg-muted/40 sm:table-header-group">
+        <thead className="request-table-head bg-muted/40 hidden sm:table-header-group">
           <tr>
             {REQUEST_COLUMNS.map((column) => (
               <th
                 key={column.id}
                 scope="col"
                 aria-sort={ariaSortForColumn(column, params.sort)}
-                className="px-4 py-3 text-left text-sm font-medium text-muted-foreground"
+                className="text-muted-foreground px-4 py-3 text-left text-sm font-medium"
                 {...columnMobileHiddenProps(column)}
               >
                 {column.sortKey ? (
@@ -59,6 +60,7 @@ export function RequestTable({ rows, params, total, user }: RequestTableProps) {
               key={row.id}
               row={row}
               canEditStatus={canUpdateRequestStatus(user, row)}
+              now={now}
             />
           ))}
         </tbody>

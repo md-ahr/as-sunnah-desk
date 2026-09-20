@@ -9,11 +9,21 @@ test.describe('duplicate submit', () => {
     await signInAsAdmin(page)
     await page.goto(`/requests/${MUTATION_REFERENCE}`)
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
+    await expect(page.getByRole('list', { name: 'Activity' })).toBeVisible()
+
+    const statusTrigger = page.getByRole('button', { name: /Change status, currently New/i })
+    await expect(statusTrigger).toBeVisible()
 
     const before = await page.getByTestId('activity-entry').count()
-    await page.getByTestId('status-badge').click()
+
+    await statusTrigger.click()
     const item = page.getByRole('menuitem', { name: 'In review' })
-    await Promise.all([item.click(), item.click().catch(() => undefined)])
+    await expect(item).toBeVisible()
+
+    await item.evaluate((element) => {
+      element.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }))
+      element.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }))
+    })
 
     await expect(page.getByTestId('activity-entry')).toHaveCount(before + 1)
   })

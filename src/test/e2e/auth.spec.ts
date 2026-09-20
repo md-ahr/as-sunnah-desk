@@ -63,13 +63,15 @@ test.describe('authentication', () => {
   test('signs in and returns to the requested destination', async ({ page }) => {
     await signIn(page, SEEDED_ACCOUNTS[0])
     await expect(page.getByRole('heading', { name: 'Service requests' })).toBeVisible()
-    await expect(page.getByRole('banner').getByText(SEEDED_ACCOUNTS[0].name)).toBeVisible()
+    await page.getByRole('button', { name: `Account menu, ${SEEDED_ACCOUNTS[0].name}` }).click()
+    await expect(page.getByRole('menu').getByText(SEEDED_ACCOUNTS[0].name)).toBeVisible()
   })
 
   test('signs out and returns to login', async ({ page }) => {
     await signIn(page, SEEDED_ACCOUNTS[0])
 
-    await page.getByRole('button', { name: 'Sign out' }).click()
+    await page.getByRole('button', { name: `Account menu, ${SEEDED_ACCOUNTS[0].name}` }).click()
+    await page.getByRole('menuitem', { name: 'Sign out' }).click()
 
     await expect(page).toHaveURL('/login')
     await page.goto('/requests')
@@ -79,9 +81,10 @@ test.describe('authentication', () => {
   for (const account of SEEDED_ACCOUNTS) {
     test(`${account.role} account can sign in and sign out`, async ({ page }) => {
       await signIn(page, account)
-      await expect(page.getByRole('banner').getByText(account.name)).toBeVisible()
+      await page.getByRole('button', { name: `Account menu, ${account.name}` }).click()
+      await expect(page.getByRole('menu').getByText(account.name)).toBeVisible()
 
-      await page.getByRole('button', { name: 'Sign out' }).click()
+      await page.getByRole('menuitem', { name: 'Sign out' }).click()
       await expect(page).toHaveURL('/login')
     })
   }

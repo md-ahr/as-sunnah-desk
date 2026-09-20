@@ -4,9 +4,10 @@ import type { ActivityEntryDto } from '@/features/activity/types'
 
 type ActivityEntryProps = {
   entry: ActivityEntryDto
+  now: number
 }
 
-export function ActivityEntry({ entry }: ActivityEntryProps) {
+export function ActivityEntry({ entry, now }: ActivityEntryProps) {
   const absolute = formatAbsoluteTime(entry.createdAt)
 
   return (
@@ -21,7 +22,7 @@ export function ActivityEntry({ entry }: ActivityEntryProps) {
         dateTime={entry.createdAt.toISOString()}
         title={absolute}
       >
-        {formatRelativeTime(entry.createdAt)}
+        {formatRelativeTime(entry.createdAt, now)}
       </time>
     </li>
   )

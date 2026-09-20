@@ -1,10 +1,11 @@
 import 'server-only'
 
-import { asc, eq } from 'drizzle-orm'
+import { asc, eq, gt } from 'drizzle-orm'
 
+import type { ActivityRecord } from '@/lib/summarize-activity'
 import type { Db, DbExecutor } from '@/server/db/client'
 import { getDb } from '@/server/db/client'
-import { requestActivities, users } from '@/server/db/schema'
+import { requestActivities, serviceRequests, users } from '@/server/db/schema'
 import type { ActivityType } from '@/server/db/schema'
 
 export type ActivityInsert = {
@@ -106,4 +107,50 @@ export async function countActivitiesByRequestId(
     .where(eq(requestActivities.requestId, requestId))
 
   return rows.length
+}
+
+const ASSIGNMENT_STREAM_BATCH_SIZE = 1_000
+
+export async function* streamAssignmentActivity(
+  db: Db = getDb(),
+): AsyncGenerator<ActivityRecord> {
+  let cursor: string | null = null
+
+  for (;;) {
+    const rows = await db
+      .select({
+        id: serviceRequests.id,
+        assigneeId: serviceRequests.assigneeId,
+        status: serviceRequests.status,
+        createdAt: serviceRequests.createdAt,
+        resolvedAt: serviceRequests.resolvedAt,
+      })
+      .from(serviceRequests)
+      .where(cursor === null ? undefined : gt(serviceRequests.id, cursor))
+      .orderBy(asc(serviceRequests.id))
+      .limit(ASSIGNMENT_STREAM_BATCH_SIZE)
+
+    if (rows.length === 0) {
+      return
+    }
+
+    for (const row of rows) {
+      yield {
+        assigneeId: row.assigneeId,
+        requestId: row.id,
+        status: row.status,
+        assignedAt: row.createdAt,
+        resolvedAt: row.resolvedAt,
+      }
+    }
+
+    const lastRow = rows.at(-1)
+    if (lastRow === undefined) {
+      return
+    }
+    cursor = lastRow.id
+    if (rows.length < ASSIGNMENT_STREAM_BATCH_SIZE) {
+      return
+    }
+  }
 }

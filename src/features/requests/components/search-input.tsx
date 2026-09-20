@@ -2,7 +2,7 @@
 
 import { Loader2 } from 'lucide-react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 import { useDashboardNavigation } from '@/features/requests/components/dashboard-navigation'
 import { useDebouncedCallback } from '@/lib/hooks/use-debounced-callback'
@@ -18,6 +18,7 @@ type SearchInputProps = {
 export function SearchInput({ params }: SearchInputProps) {
   const [value, setValue] = useState(params.q ?? '')
   const formRef = useRef<HTMLFormElement>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -41,6 +42,41 @@ export function SearchInput({ params }: SearchInputProps) {
     })
   }, 300)
 
+  useEffect(() => {
+    function onKeyDown(event: KeyboardEvent) {
+      const target = event.target
+      const inEditable =
+        target instanceof HTMLElement &&
+        (target.isContentEditable ||
+          target.tagName === 'INPUT' ||
+          target.tagName === 'TEXTAREA' ||
+          target.tagName === 'SELECT')
+
+      if (
+        event.key === '/' &&
+        !inEditable &&
+        !event.metaKey &&
+        !event.ctrlKey &&
+        !event.altKey
+      ) {
+        event.preventDefault()
+        inputRef.current?.focus()
+        return
+      }
+
+      if (event.key === 'Escape' && target === inputRef.current) {
+        setValue('')
+        commit('')
+        inputRef.current?.blur()
+      }
+    }
+
+    document.addEventListener('keydown', onKeyDown)
+    return () => {
+      document.removeEventListener('keydown', onKeyDown)
+    }
+  }, [commit])
+
   return (
     <form
       ref={formRef}
@@ -53,6 +89,7 @@ export function SearchInput({ params }: SearchInputProps) {
     >
       {searchParamHiddenFields(params, { q: true, cursor: true, page: true })}
       <input
+        ref={inputRef}
         type="search"
         name="q"
         value={value}

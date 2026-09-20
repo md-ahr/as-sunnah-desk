@@ -233,6 +233,7 @@ const MUTATION_FIXTURES: Partial<
   905: { subject: 'Mutation fixture: consecutive status', status: 'new', assigneeId: 'user_agent' },
   906: { subject: 'Mutation fixture: dashboard status', status: 'new', assigneeId: 'user_agent' },
   907: { subject: 'Mutation fixture: assignee keyboard', status: 'new', assigneeId: null },
+  908: { subject: 'Mutation fixture: a11y keyboard journey', status: 'new', assigneeId: 'user_agent' },
 }
 
 function buildRequests(

@@ -208,13 +208,13 @@ These are **your** components under `src/features/` and `src/components/`. They 
 
 ### Phase 6
 
-- [ ] `InsightsSummaryTable` and `RejectedRecordsDisclosure` (`collapsible`)
+- [x] `InsightsSummaryTable` and `RejectedRecordsDisclosure` (`collapsible`)
 
 ### Phase 7
 
-- [ ] Root `not-found` / `global-error`
-- [ ] Keyboard audit on every component in the keyboard table ([08](./08-ui-states-and-accessibility.md#keyboard))
-- [ ] `pnpm knip` — no orphaned `components/ui` files
+- [x] Root `not-found` / `global-error`
+- [x] Keyboard audit on every component in the keyboard table ([08](./08-ui-states-and-accessibility.md#keyboard))
+- [x] `pnpm knip` — no orphaned `components/ui` files
 
 ---
 

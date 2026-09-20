@@ -45,6 +45,7 @@ export function AssigneeControl({
   const { getVersion, setVersion } = useMutationVersion(requestId, version)
   const [isPending, startTransition] = useTransition()
   const inFlightRef = useRef<{ key: string; target: string | null } | null>(null)
+  const inFlightCountRef = useRef(0)
   const anchorRef = useComboboxAnchor()
 
   const labelsByValue = useMemo(() => {
@@ -80,6 +81,7 @@ export function AssigneeControl({
         ? inFlightRef.current.key
         : crypto.randomUUID()
     inFlightRef.current = { key: idempotencyKey, target: nextAssigneeId }
+    inFlightCountRef.current += 1
 
     startTransition(async () => {
       setOptimisticAssignee(nextAssignee)
@@ -107,7 +109,10 @@ export function AssigneeControl({
       } catch {
         toast.error('The assignee update could not be completed.')
       } finally {
-        inFlightRef.current = null
+        inFlightCountRef.current -= 1
+        if (inFlightCountRef.current === 0) {
+          inFlightRef.current = null
+        }
       }
     })
   }

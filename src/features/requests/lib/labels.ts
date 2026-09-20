@@ -25,8 +25,9 @@ export function priorityLabel(priority: RequestPriority): string {
   return PRIORITY_LABELS[priority]
 }
 
-export function formatRelativeTime(date: Date): string {
-  const diffMs = date.getTime() - Date.now()
+export function formatRelativeTime(date: Date, now: Date | number): string {
+  const nowMs = typeof now === 'number' ? now : now.getTime()
+  const diffMs = date.getTime() - nowMs
   const absMs = Math.abs(diffMs)
   const minutes = Math.round(absMs / 60_000)
   const hours = Math.round(absMs / 3_600_000)

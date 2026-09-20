@@ -17,6 +17,7 @@ import type { RequestUpdateResultDto } from '../types'
 function invalidateAfterUpdate(requestId: string): void {
   updateTag(tags.request(requestId))
   updateTag(tags.requestActivity(requestId))
+  updateTag(tags.assigneeSummary())
   revalidateTag(tags.facetCounts(), 'max')
 }
 

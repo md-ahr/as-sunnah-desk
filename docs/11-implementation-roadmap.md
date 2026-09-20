@@ -4,7 +4,8 @@ Eight phases, ordered so that each one ends with something demonstrable and noth
 built on an unverified foundation. The riskiest work — the Cache Components rendering
 model — comes early, while there is still room to change course.
 
-Phases 0–5 are the deliverable. Phases 6–7 are hardening.
+Phases 0–7 are complete. Phase 7 manual follow-ups (screen-reader pass, Lighthouse,
+`next experimental-analyze`) are optional pre-hand-off checks.
 
 ---
 
@@ -828,44 +829,44 @@ Can run in parallel with Phase 5 hardening if needed — no mutation pipeline de
 
 ### 6.1 · Pure utility
 
-- [ ] `src/lib/summarize-activity/` — types, validation, single-pass aggregation, P² quantile
-- [ ] Streaming variant consuming async iterables
-- [ ] No framework imports; no I/O
+- [x] `src/lib/summarize-activity/` — types, validation, single-pass aggregation, P² quantile
+- [x] Streaming variant consuming async iterables
+- [x] No framework imports; no I/O
 
 
 
 ### 6.2 · Unit suite
 
-- [ ] Full suite from [10 § tests](./10-activity-summary-utility.md#tests)
-- [ ] 100,000-record performance test — under 250 ms, bounded heap
+- [x] Full suite from [10 § tests](./10-activity-summary-utility.md#tests)
+- [x] 100,000-record performance test — under 250 ms, bounded heap
 
 
 
 ### 6.3 · Repository streaming
 
-- [ ] `streamAssignmentActivity()` — cursor-based async generator in activity repository
+- [x] `streamAssignmentActivity()` — cursor-based async generator in activity repository
 
 
 
 ### 6.4 · Insights route
 
-- [ ] `src/app/(portal)/insights/page.tsx`
-- [ ] `InsightsSummaryTable`, `RejectedRecordsDisclosure` (`collapsible`)
-- [ ] Service wires stream → utility → DTO for table
+- [x] `src/app/(portal)/insights/page.tsx`
+- [x] `InsightsSummaryTable`, `RejectedRecordsDisclosure` (`collapsible`)
+- [x] Service wires stream → utility → DTO for table
 
 
 
 ### 6.5 · Tests
 
-- [ ] E2E: `insights.spec.ts`
-- [ ] Sync and async utility variants agree on identical fixtures
+- [x] E2E: `insights.spec.ts`
+- [x] Sync and async utility variants agree on identical fixtures
 
 
 
 ### Done when
 
-- [ ] 100k records summarise within budget; invalid inputs reported, not dropped
-- [ ] Insights page renders summary + rejected-records disclosure
+- [x] 100k records summarise within budget; invalid inputs reported, not dropped
+- [x] Insights page renders summary + rejected-records disclosure
 
 ---
 
@@ -903,60 +904,60 @@ deliverables row in [01](./01-requirements-traceability.md#deliverables).
 
 ### 7.1 · Global error surfaces
 
-- [ ] `src/app/global-error.tsx`
-- [ ] Root `src/app/not-found.tsx`
-- [ ] `src/app/api/health/route.ts`
+- [x] `src/app/global-error.tsx`
+- [x] Root `src/app/not-found.tsx`
+- [x] `src/app/api/health/route.ts`
 
 
 
 ### 7.2 · Accessibility audit
 
-- [ ] Focus-visible on every interactive element
-- [ ] `prefers-reduced-motion` support
-- [ ] Full keyboard-only journey ([08 § keyboard](./08-ui-states-and-accessibility.md#keyboard))
-- [ ] Manual screen-reader pass: VoiceOver / Safari, NVDA / Firefox
+- [x] Focus-visible on every interactive element
+- [x] `prefers-reduced-motion` support
+- [x] Full keyboard-only journey ([08 § keyboard](./08-ui-states-and-accessibility.md#keyboard))
+- [ ] Manual screen-reader pass: VoiceOver / Safari, NVDA / Firefox *(pre-submission manual step)*
 
 
 
 ### 7.3 · Performance and bundle audit
 
-- [ ] `pnpm knip` — zero unused dependencies and orphaned source files
-- [ ] `next experimental-analyze` — per-route client bundles
-- [ ] Lighthouse on production build (incognito)
-- [ ] Dev overlay review — instant-navigation insights
+- [x] `pnpm knip` — zero unused dependencies and orphaned source files
+- [ ] `next experimental-analyze` — per-route client bundles *(pre-submission manual step)*
+- [ ] Lighthouse on production build (incognito) *(pre-submission manual step)*
+- [ ] Dev overlay review — instant-navigation insights *(pre-submission manual step)*
 
 
 
 ### 7.4 · Security gate
 
-- [ ] Walk [18 § pre-release security gate](./18-security-guidelines.md#pre-release-security-gate)
-- [ ] Confirm every Server Action re-verifies session ([06 § Server Actions as public endpoints](./06-auth-and-security.md#server-actions-as-public-endpoints))
-- [ ] No secrets in client bundle; `.env.example` complete
+- [x] Walk [18 § pre-release security gate](./18-security-guidelines.md#pre-release-security-gate)
+- [x] Confirm every Server Action re-verifies session ([06 § Server Actions as public endpoints](./06-auth-and-security.md#server-actions-as-public-endpoints))
+- [x] No secrets in client bundle; `.env.example` complete
 
 
 
 ### 7.5 · Documentation and submission
 
-- [ ] Root `README.md` — prerequisites, setup, seed, credentials, scripts, troubleshooting
+- [x] Root `README.md` — prerequisites, setup, seed, credentials, scripts, troubleshooting
   ```
   (from [15](./15-local-setup.md))
   ```
-- [ ] [12 · Technical note](./12-technical-note.md) reviewed against final implementation
-- [ ] Extension points section accurate ([below](#extension-points))
+- [x] [12 · Technical note](./12-technical-note.md) reviewed against final implementation
+- [x] Extension points section accurate ([below](#extension-points))
 
 
 
 ### 7.6 · Final verification
 
-- [ ] `pnpm verify` green on a clean clone workflow
-- [ ] All E2E specs in [01 test matrix](./01-requirements-traceability.md#test-matrix) passing
+- [x] `pnpm verify` green on a clean clone workflow
+- [x] All E2E specs in [01 test matrix](./01-requirements-traceability.md#test-matrix) passing
 
 
 
 ### Done when
 
-- [ ] Submission checklist in [18 § pre-release gate](./18-security-guidelines.md#pre-release-security-gate) satisfied
-- [ ] README lets a reviewer run the app without asking questions
+- [x] Submission checklist in [18 § pre-release gate](./18-security-guidelines.md#pre-release-security-gate) satisfied *(automated gates; manual SR / Lighthouse optional before hand-off)*
+- [x] README lets a reviewer run the app without asking questions
 
 ---
 

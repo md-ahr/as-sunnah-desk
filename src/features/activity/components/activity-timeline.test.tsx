@@ -38,13 +38,15 @@ const entries: ActivityEntryDto[] = [
   },
 ]
 
+const NOW = Date.parse('2026-01-01T12:00:00.000Z')
+
 describe('ActivityTimeline', () => {
   afterEach(() => {
     cleanup()
   })
 
   it('renders chronological entries with timestamps', () => {
-    render(<ActivityTimeline entries={entries} />)
+    render(<ActivityTimeline entries={entries} now={NOW} />)
 
     expect(screen.getByRole('heading', { name: 'Activity' })).toBeInTheDocument()
     expect(screen.getByText(/created this request/)).toBeInTheDocument()
@@ -56,7 +58,7 @@ describe('ActivityTimeline', () => {
   })
 
   it('has no accessibility violations', async () => {
-    const { container } = render(<ActivityTimeline entries={entries} />)
+    const { container } = render(<ActivityTimeline entries={entries} now={NOW} />)
     const results = await axe(container)
     expect(results.violations).toEqual([])
   })
