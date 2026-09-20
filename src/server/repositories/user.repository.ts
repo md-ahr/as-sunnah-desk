@@ -1,6 +1,6 @@
 import 'server-only'
 
-import { eq } from 'drizzle-orm'
+import { and, eq } from 'drizzle-orm'
 
 import type { Db } from '@/server/db/client'
 import { getDb } from '@/server/db/client'
@@ -22,6 +22,13 @@ export type UserPublicDto = {
   readonly name: string
   readonly role: UserRole
   readonly isActive: boolean
+}
+
+export type ActiveUserDto = {
+  readonly id: string
+  readonly email: string
+  readonly name: string
+  readonly role: UserRole
 }
 
 export async function findUserById(id: string, db: Db = getDb()): Promise<UserAuthDto | null> {
@@ -56,6 +63,24 @@ export async function findUserByEmail(
     })
     .from(users)
     .where(eq(users.email, email))
+    .limit(1)
+
+  return row ?? null
+}
+
+export async function findActiveUserById(
+  id: string,
+  db: Db = getDb(),
+): Promise<ActiveUserDto | null> {
+  const [row] = await db
+    .select({
+      id: users.id,
+      email: users.email,
+      name: users.name,
+      role: users.role,
+    })
+    .from(users)
+    .where(and(eq(users.id, id), eq(users.isActive, true)))
     .limit(1)
 
   return row ?? null

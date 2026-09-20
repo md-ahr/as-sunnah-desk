@@ -5,6 +5,7 @@ const baseURL = `http://127.0.0.1:${String(PORT)}`
 
 export default defineConfig({
   testDir: './src/test/e2e',
+  globalSetup: './src/test/e2e/global-setup.ts',
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,

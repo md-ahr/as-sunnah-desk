@@ -186,8 +186,8 @@ These are **your** components under `src/features/` and `src/components/`. They 
 
 ### Phase 2
 
-- [ ] `LoginForm` — `input`, `label`, `button`
-- [ ] `PortalHeader` user menu skeleton (logout can land here or Phase 3)
+- [x] `LoginForm` — `input`, `label`, `button`
+- [x] `PortalHeader` user menu skeleton (logout can land here or Phase 3)
 
 ### Phase 3
 

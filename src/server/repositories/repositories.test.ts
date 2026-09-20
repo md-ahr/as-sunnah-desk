@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import { listActivitiesByRequestId } from '@/server/repositories/activity.repository'
 import {
+  findActiveUserById,
   findPublicUserById,
   findUserByEmail,
   findUserById,
@@ -51,11 +52,13 @@ describe('reference and user repositories', () => {
   it('finds users by id and email without exposing extra columns', async () => {
     const byId = await findUserById('user_admin', ctx.db)
     const byEmail = await findUserByEmail('admin@assunnah.test', ctx.db)
-
+    const activeUser = await findActiveUserById('user_admin', ctx.db)
     const publicUser = await findPublicUserById('user_admin', ctx.db)
 
     expect(byId).toMatchObject({ id: 'user_admin', role: 'admin', passwordHash: 'hashed-password' })
     expect(byEmail?.id).toBe('user_admin')
+    expect(activeUser).toMatchObject({ id: 'user_admin', role: 'admin' })
+    expect(activeUser).not.toHaveProperty('passwordHash')
     expect(publicUser).toMatchObject({ id: 'user_admin', role: 'admin' })
     expect(publicUser).not.toHaveProperty('passwordHash')
   })

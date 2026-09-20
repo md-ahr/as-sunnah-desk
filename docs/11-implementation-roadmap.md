@@ -406,23 +406,23 @@ Depends on Phase 1: `user.repository.ts`, seeded accounts.
 
 ### 2.1 · Session and password
 
-- [ ] `src/server/auth/session.ts` — iron-session seal / unseal, cookie options per
+- [x] `src/server/auth/session.ts` — iron-session seal / unseal, cookie options per
   ```
   [06 § sessions](./06-auth-and-security.md#sessions)
   ```
-- [ ] `src/server/auth/password.ts` — argon2 hash and verify
-- [ ] Constant-time dummy-hash path for unknown emails ([06 § login](./06-auth-and-security.md))
+- [x] `src/server/auth/password.ts` — argon2 hash and verify
+- [x] Constant-time dummy-hash path for unknown emails ([06 § login](./06-auth-and-security.md))
 
 
 
 ### 2.2 · Data Access Layer and permissions
 
-- [ ] `src/server/auth/dal.ts` — `getCurrentUser()` with `use cache: private`;
+- [x] `src/server/auth/dal.ts` — `getCurrentUser()` with `use cache: private`;
   ```
   `requireUser()` returning `Result`
   ```
-- [ ] `src/server/auth/permissions.ts` — capability map by role (agent, admin, viewer, …)
-- [ ] Wire DAL into repository calls — services come in Phase 3; prove DAL with a minimal
+- [x] `src/server/auth/permissions.ts` — capability map by role (agent, admin, viewer, …)
+- [x] Wire DAL into repository calls — services come in Phase 3; prove DAL with a minimal
   ```
   integration test against `user.repository`
   ```
@@ -431,49 +431,49 @@ Depends on Phase 1: `user.repository.ts`, seeded accounts.
 
 ### 2.3 · Rate limiting
 
-- [ ] `src/server/auth/rate-limit.ts` — in-memory sliding window keyed on IP + email
-- [ ] Unit test: sixth rapid failure is blocked
+- [x] `src/server/auth/rate-limit.ts` — in-memory sliding window keyed on IP + email
+- [x] Unit test: sixth rapid failure is blocked
 
 
 
 ### 2.4 · Server Actions
 
-- [ ] `src/features/auth/schemas/credentials.ts` — Zod schema
-- [ ] `src/features/auth/actions/login.ts` — four-step preamble; return `Result`
-- [ ] `src/features/auth/actions/logout.ts` — clear cookie, redirect
+- [x] `src/lib/auth/credentials.ts` — Zod schema (pure `lib/`; consumed by `auth.service`)
+- [x] `src/features/auth/actions/login.ts` — validate via service; return `Result` errors
+- [x] `src/features/auth/actions/logout.ts` — clear cookie, redirect
 
 
 
 ### 2.5 · Routes, proxy, and login UI
 
-- [ ] `src/app/(auth)/layout.tsx` — centred auth shell
-- [ ] `src/app/(auth)/login/page.tsx` + `LoginForm` Client Component
+- [x] `src/app/(auth)/layout.tsx` — centred auth shell
+- [x] `src/app/(auth)/login/page.tsx` + `LoginForm` Client Component
   ```
   (`input`, `label`, `button` — [14 § auth](./14-ui-component-plan.md#auth-phase-2))
   ```
-- [ ] `src/proxy.ts` — optimistic cookie check, `?next=` redirect
+- [x] `src/proxy.ts` — optimistic cookie check, `?next=` redirect
   ```
   ([06 § proxy layer](./06-auth-and-security.md#the-proxy-layer))
   ```
-- [ ] `ToasterHost` in root layout if not done in Phase 0
-- [ ] Four seeded accounts documented in README ([15 § test accounts](./15-local-setup.md#seeded-test-accounts))
+- [x] `ToasterHost` in root layout if not done in Phase 0
+- [x] Four seeded accounts documented in README ([15 § test accounts](./15-local-setup.md#seeded-test-accounts))
 
 
 
 ### 2.6 · Tests
 
-- [ ] Unit: rate limiter, password verify, permissions map
-- [ ] Integration: login success / failure, session seal round-trip
-- [ ] E2E scaffold: `src/test/e2e/auth.spec.ts` — sign in, sign out, protected redirect
+- [x] Unit: rate limiter, password verify, permissions map
+- [x] Integration: login success / failure, session seal round-trip
+- [x] E2E scaffold: `src/test/e2e/auth.spec.ts` — sign in, sign out, protected redirect
 
 
 
 ### Done when
 
-- [ ] All four accounts sign in and out
-- [ ] Protected URL redirects to login and returns via `?next=`
-- [ ] Six rapid failed attempts are rate-limited
-- [ ] Dev overlay clean after first `use cache: private` usage
+- [x] All four accounts sign in and out
+- [x] Protected URL redirects to login and returns via `?next=`
+- [x] Six rapid failed attempts are rate-limited
+- [x] Dev overlay clean after first `use cache: private` usage
 
 ---
 
