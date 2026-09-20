@@ -1,6 +1,6 @@
 {
   "$schema": "https://unpkg.com/knip@5/schema.json",
-  "ignore": ["src/components/ui/**", "drizzle/meta/**"],
+  "ignore": ["src/components/ui/**", "drizzle/meta/**", "src/test/mocks/**"],
   "ignoreDependencies": [
     "@base-ui/react",
     "@libsql/client",
@@ -24,6 +24,7 @@
   "ignoreFiles": ["src/lib/utils.ts", "src/server/errors/app-error.ts"],
   "ignoreIssues": {
     "src/lib/app-error.ts": ["exports"],
-    "src/server/env.ts": ["exports"]
+    "src/server/env.ts": ["exports"],
+    "src/server/db/types.ts": ["exports", "types", "files"]
   }
 }

@@ -312,25 +312,25 @@ Do **not** read UI or rendering docs yet — no routes in this phase.
 
 ### 1.1 · Schema and migrations
 
-- [ ] `src/server/db/schema.ts` — tables, enums, indexes, `priority_rank` generated column
-- [ ] Drizzle Kit config at repo root; initial migration committed
-- [ ] FTS5 virtual table + sync triggers as a separate migration
-- [ ] `src/server/db/types.ts` — inferred row / insert types exported for repositories
+- [x] `src/server/db/schema.ts` — tables, enums, indexes, `priority_rank` generated column
+- [x] Drizzle Kit config at repo root; initial migration committed
+- [x] FTS5 virtual table + sync triggers as a separate migration
+- [x] `src/server/db/types.ts` — inferred row / insert types exported for repositories
 
 
 
 ### 1.2 · Database client
 
-- [ ] `src/server/db/client.ts` — libSQL + Drizzle singleton (module-scoped; survives HMR)
-- [ ] Import `'server-only'`; no client or route imports
+- [x] `src/server/db/client.ts` — libSQL + Drizzle singleton (module-scoped; survives HMR)
+- [x] Import `'server-only'`; no client or route imports
 
 
 
 ### 1.3 · Seed
 
-- [ ] `src/server/db/seed.ts` — deterministic, batched in one transaction, realistic distributions
-- [ ] `package.json` scripts: `db:generate`, `db:migrate`, `db:seed`, `db:reset`
-- [ ] Target: 12,000 `service_requests`, ~48,000 activity rows, four credentialed users
+- [x] `src/server/db/seed.ts` — deterministic, batched in one transaction, realistic distributions
+- [x] `package.json` scripts: `db:generate`, `db:migrate`, `db:seed`, `db:reset`
+- [x] Target: 12,000 `service_requests`, ~48,000 activity rows, four credentialed users
 
 
 
@@ -338,36 +338,36 @@ Do **not** read UI or rendering docs yet — no routes in this phase.
 
 Build in dependency order — reference data before requests:
 
-- [ ] `src/server/repositories/reference.repository.ts` — categories, assignable users (narrow DTOs)
-- [ ] `src/server/repositories/user.repository.ts` — by id / email for auth (Phase 2)
-- [ ] `src/server/repositories/request.repository.ts` — list + get-by-reference; FTS or LIKE fallback
-- [ ] `src/server/repositories/activity.repository.ts` — timeline by request id
+- [x] `src/server/repositories/reference.repository.ts` — categories, assignable users (narrow DTOs)
+- [x] `src/server/repositories/user.repository.ts` — by id / email for auth (Phase 2)
+- [x] `src/server/repositories/request.repository.ts` — list + get-by-reference; FTS or LIKE fallback
+- [x] `src/server/repositories/activity.repository.ts` — timeline by request id
 
 Each repository: explicit return types, selected columns only, no password hashes in DTOs
 ([18 § authorization patterns](./18-security-guidelines.md#authorization-patterns)).
 
 ### 1.5 · Keyset pagination utilities
 
-- [ ] `src/lib/search-params/cursor.ts` — encode / decode cursor tokens
-- [ ] Whitelisted sort map in repository or `src/lib/search-params/` (full URL contract lands in Phase 3)
-- [ ] Predicate builder for `(sort_key, id)` tuple comparison
+- [x] `src/lib/search-params/cursor.ts` — encode / decode cursor tokens
+- [x] Whitelisted sort map in repository or `src/lib/search-params/` (full URL contract lands in Phase 3)
+- [x] Predicate builder for `(sort_key, id)` tuple comparison
 
 
 
 ### 1.6 · Integration tests
 
-- [ ] Test factories in `src/test/factories/` per [16 § factories](./16-test-guidelines.md#layer-2--integration-tests)
-- [ ] 12,000-row keyset pagination — no gaps, no duplicates under concurrent insert simulation
-- [ ] `EXPLAIN QUERY PLAN` assertion — list query must not `SCAN service_requests`
-- [ ] FTS search returns expected matches (or document LIKE fallback)
+- [x] Test factories in `src/test/factories/` per [16 § factories](./16-test-guidelines.md#layer-2--integration-tests)
+- [x] 12,000-row keyset pagination — no gaps, no duplicates under concurrent insert simulation
+- [x] `EXPLAIN QUERY PLAN` assertion — list query must not `SCAN service_requests`
+- [x] FTS search returns expected matches (or document LIKE fallback)
 
 
 
 ### Done when
 
-- [ ] `pnpm db:seed` completes in under 30 seconds
-- [ ] Every list query plan is index-backed
-- [ ] Integration suite green; no routes or UI exist yet
+- [x] `pnpm db:seed` completes in under 30 seconds
+- [x] Every list query plan is index-backed
+- [x] Integration suite green; no routes or UI exist yet
 
 **Risk:** FTS5 triggers are fiddly. Ship `subject LIKE` behind the same repository
 function and revisit — the interface does not change.

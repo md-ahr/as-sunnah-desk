@@ -1,0 +1,27 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "6",
+      "when": 1789900600551,
+      "tag": "0000_steady_wonder_man",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1789900607021,
+      "tag": "0001_requests_fts",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1789901646734,
+      "tag": "0002_priority_rank_index",
+      "breakpoints": true
+    }
+  ]
+}

@@ -1,0 +1,1 @@
+CREATE INDEX `idx_requests_priority_rank_updated` ON `service_requests` (`priority_rank`,`updated_at`,`id`);
