@@ -1,6 +1,7 @@
 'use client'
 
-import { useMemo, useOptimistic, useRef, useTransition } from 'react'
+import { useMemo, useOptimistic, useRef, useState, useTransition } from 'react'
+import { useRouter } from 'next/navigation'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { toast } from 'sonner'
 
@@ -43,20 +44,34 @@ export function AssigneeControl({
   disabledReason = 'You do not have permission to change the assignee.',
   showTrigger = false,
 }: AssigneeControlProps) {
-  const [optimisticAssignee, setOptimisticAssignee] = useOptimistic(assignee)
+  const router = useRouter()
+  const [committedAssignee, setCommittedAssignee] = useState(assignee)
+  const [prevSyncedAssigneeId, setPrevSyncedAssigneeId] = useState<string | null>(
+    assignee?.id ?? null,
+  )
+  const [optimisticAssignee, setOptimisticAssignee] = useOptimistic(committedAssignee)
   const { getVersion, setVersion } = useMutationVersion(requestId, version)
   const [isPending, startTransition] = useTransition()
   const inFlightRef = useRef<{ key: string; target: string | null } | null>(null)
   const inFlightCountRef = useRef(0)
   const anchorRef = useComboboxAnchor()
 
+  const assigneeId = assignee?.id ?? null
+  if (assigneeId !== prevSyncedAssigneeId) {
+    setPrevSyncedAssigneeId(assigneeId)
+    setCommittedAssignee(assignee)
+  }
+
   const labelsByValue = useMemo(() => {
     const labels = new Map<string, string>([[UNASSIGNED_VALUE, 'Unassigned']])
     for (const option of options) {
       labels.set(option.id, option.name)
     }
+    if (committedAssignee) {
+      labels.set(committedAssignee.id, committedAssignee.name)
+    }
     return labels
-  }, [options])
+  }, [options, committedAssignee])
 
   const values = useMemo(() => [UNASSIGNED_VALUE, ...options.map((option) => option.id)], [options])
 
@@ -109,7 +124,9 @@ export function AssigneeControl({
           return
         }
 
+        setCommittedAssignee(result.data.assignee)
         setVersion(result.data.version)
+        router.refresh()
         toast.success(successMessageForAssignee(result.data.assignee?.name ?? null))
       } catch {
         toast.error('The assignee update could not be completed.')
@@ -139,7 +156,12 @@ export function AssigneeControl({
 
   return (
     <div ref={anchorRef} className="w-full max-w-xs">
-      <Combobox value={selectedValue} onValueChange={onValueChange} disabled={isPending}>
+      <Combobox
+        value={selectedValue}
+        onValueChange={onValueChange}
+        disabled={isPending}
+        itemToStringLabel={(value) => labelsByValue.get(value) ?? value}
+      >
         <ComboboxInput
           aria-label="Assignee"
           placeholder={selectedLabel}

@@ -35,11 +35,22 @@ describe('formatRelativeTime', () => {
 })
 
 describe('formatAbsoluteTime', () => {
-  it('formats an absolute timestamp for display', () => {
+  it('formats an absolute timestamp in the runtime locale and timezone by default', () => {
     const formatted = formatAbsoluteTime(new Date('2026-01-15T10:00:00.000Z'))
 
-    expect(formatted).toMatch(/15/)
+    expect(formatted.length).toBeGreaterThan(0)
+  })
+
+  it('accepts explicit locale and timezone overrides', () => {
+    const formatted = formatAbsoluteTime(new Date('2026-01-15T10:00:00.000Z'), {
+      locale: 'en-US',
+      timeZone: 'UTC',
+      hour12: true,
+    })
+
+    expect(formatted).toMatch(/Jan/)
     expect(formatted).toMatch(/2026/)
+    expect(formatted).toMatch(/10:00 AM/)
   })
 })
 

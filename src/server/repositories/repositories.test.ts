@@ -112,4 +112,25 @@ describe('activity.repository integration', () => {
     expect(timeline.map((entry) => entry.type)).toEqual(['created', 'commented'])
     expect(timeline[1]?.actor.name).toBe('Viewer User')
   })
+
+  it('resolves assignee ids to display names in assignment activity', async () => {
+    await insertUser(ctx.db, { id: 'user_agent', name: 'Agent User' })
+    await ctx.db.insert(requestActivities).values({
+      id: 'act_3',
+      requestId: 'req_1',
+      actorId: 'user_viewer',
+      type: 'assigned',
+      field: 'assignee',
+      fromValue: null,
+      toValue: 'user_agent',
+      comment: null,
+      idempotencyKey: null,
+      createdAt: new Date('2026-01-01T12:00:00.000Z'),
+    })
+
+    const timeline = await listActivitiesByRequestId('req_1', ctx.db)
+    const assigned = timeline.find((entry) => entry.type === 'assigned')
+
+    expect(assigned?.toValue).toBe('Agent User')
+  })
 })

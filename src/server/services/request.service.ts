@@ -33,6 +33,7 @@ import {
   listFromEnd,
   listOffset,
   listPaged,
+  resolveFtsMatchIds,
   updateAssigneeIfVersionMatches,
   updateStatusIfVersionMatches,
 } from '@/server/repositories/request.repository'
@@ -100,14 +101,15 @@ export async function listRequests(
     assigneeIds: [],
     sort: 'updated_desc',
   }
+  const ftsIds = filters.query ? await resolveFtsMatchIds(db, filters.query) : null
 
   if (params.seek === 'end') {
     const [total, facets] = await Promise.all([
-      countMatching(db, filters),
+      countMatching(db, filters, ftsIds),
       getCachedFacetCounts(facetScope),
     ])
     const page =
-      total > 0 ? await listFromEnd(db, filters, params.perPage, total) : emptyRequestPage()
+      total > 0 ? await listFromEnd(db, filters, params.perPage, total, ftsIds) : emptyRequestPage()
 
     return ok({ page, total, facets })
   }
@@ -115,15 +117,15 @@ export async function listRequests(
   let page: PageResult<RequestListItem>
 
   if (params.cursor) {
-    page = await listPaged(db, filters, params.cursor, params.perPage)
+    page = await listPaged(db, filters, params.cursor, params.perPage, ftsIds)
   } else if (params.page > 1 && params.page <= OFFSET_PAGE_LIMIT) {
-    page = await listOffset(db, filters, (params.page - 1) * params.perPage, params.perPage)
+    page = await listOffset(db, filters, (params.page - 1) * params.perPage, params.perPage, ftsIds)
   } else {
-    page = await listPaged(db, filters, null, params.perPage)
+    page = await listPaged(db, filters, null, params.perPage, ftsIds)
   }
 
   const [total, facets] = await Promise.all([
-    countMatching(db, filters),
+    countMatching(db, filters, ftsIds),
     getCachedFacetCounts(facetScope),
   ])
 

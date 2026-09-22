@@ -52,11 +52,20 @@ export function formatRelativeTime(date: Date, now: Date | number): string {
   return formatter.format(years === 0 ? -1 : years, 'year')
 }
 
-export function formatAbsoluteTime(date: Date): string {
-  return new Intl.DateTimeFormat('en-GB', {
+export type FormatAbsoluteTimeOptions = {
+  locale?: string | string[]
+  timeZone?: string
+  hour12?: boolean
+}
+
+export function formatAbsoluteTime(date: Date, options?: FormatAbsoluteTimeOptions): string {
+  const { locale, timeZone, hour12 } = options ?? {}
+
+  return new Intl.DateTimeFormat(locale, {
     dateStyle: 'medium',
     timeStyle: 'short',
-    timeZone: 'UTC',
+    ...(hour12 === undefined ? {} : { hour12 }),
+    ...(timeZone === undefined ? {} : { timeZone }),
   }).format(date)
 }
 

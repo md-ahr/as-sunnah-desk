@@ -12,6 +12,7 @@ const {
   mockListFromEnd,
   mockListOffset,
   mockListPaged,
+  mockResolveFtsMatchIds,
 } = vi.hoisted(() => ({
   mockCacheLife: vi.fn(),
   mockCacheTag: vi.fn(),
@@ -20,6 +21,7 @@ const {
   mockListFromEnd: vi.fn(),
   mockListOffset: vi.fn(),
   mockListPaged: vi.fn(),
+  mockResolveFtsMatchIds: vi.fn(),
 }))
 
 vi.mock('next/cache', () => ({
@@ -33,6 +35,7 @@ vi.mock('@/server/repositories/request.repository', () => ({
   listFromEnd: mockListFromEnd,
   listOffset: mockListOffset,
   listPaged: mockListPaged,
+  resolveFtsMatchIds: mockResolveFtsMatchIds,
 }))
 
 vi.mock('@/server/db/client', () => ({
@@ -77,6 +80,7 @@ describe('listRequests', () => {
     mockListPaged.mockResolvedValue(emptyPage)
     mockListOffset.mockResolvedValue(emptyPage)
     mockListFromEnd.mockResolvedValue(emptyPage)
+    mockResolveFtsMatchIds.mockResolvedValue([])
   })
 
   it('loads the first page through keyset pagination', async () => {
@@ -85,7 +89,7 @@ describe('listRequests', () => {
     const result = await listRequests(parseSearchParams({}), categories)
 
     expect(result.ok).toBe(true)
-    expect(mockListPaged).toHaveBeenCalledWith(expect.anything(), expect.anything(), null, 10)
+    expect(mockListPaged).toHaveBeenCalledWith(expect.anything(), expect.anything(), null, 10, null)
     expect(mockListOffset).not.toHaveBeenCalled()
     if (result.ok) {
       expect(result.data.total).toBe(12)
@@ -96,7 +100,7 @@ describe('listRequests', () => {
   it('uses offset pagination inside the configured window', async () => {
     await listRequests(parseSearchParams({ page: '2', perPage: '25' }), categories)
 
-    expect(mockListOffset).toHaveBeenCalledWith(expect.anything(), expect.anything(), 25, 25)
+    expect(mockListOffset).toHaveBeenCalledWith(expect.anything(), expect.anything(), 25, 25, null)
   })
 
   it('uses the cursor when one is present', async () => {
@@ -107,6 +111,7 @@ describe('listRequests', () => {
       expect.anything(),
       'cursor-token',
       10,
+      null,
     )
   })
 
@@ -118,6 +123,7 @@ describe('listRequests', () => {
       expect.objectContaining({ categoryIds: ['cat_it_support'] }),
       null,
       10,
+      null,
     )
   })
 
@@ -132,7 +138,7 @@ describe('listRequests', () => {
     const result = await listRequests(parseSearchParams({ seek: 'end', perPage: '10' }), categories)
 
     expect(result.ok).toBe(true)
-    expect(mockListFromEnd).toHaveBeenCalledWith(expect.anything(), expect.anything(), 10, 25)
+    expect(mockListFromEnd).toHaveBeenCalledWith(expect.anything(), expect.anything(), 10, 25, null)
     if (result.ok) {
       expect(result.data.page.items).toHaveLength(1)
     }
@@ -147,5 +153,28 @@ describe('listRequests', () => {
       expect(result.data.page.items).toEqual([])
       expect(result.data.total).toBe(0)
     }
+  })
+
+  it('resolves FTS once and shares match ids across list and count', async () => {
+    const matchedIds = ['req_1', 'req_2']
+    mockResolveFtsMatchIds.mockResolvedValue(matchedIds)
+    mockCountMatching.mockResolvedValue(2)
+
+    await listRequests(parseSearchParams({ q: 'laptop' }), categories)
+
+    expect(mockResolveFtsMatchIds).toHaveBeenCalledTimes(1)
+    expect(mockResolveFtsMatchIds).toHaveBeenCalledWith(expect.anything(), 'laptop')
+    expect(mockListPaged).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ query: 'laptop' }),
+      null,
+      10,
+      matchedIds,
+    )
+    expect(mockCountMatching).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ query: 'laptop' }),
+      matchedIds,
+    )
   })
 })

@@ -91,7 +91,7 @@ function escapeFtsQuery(query: string): string {
     .join(' AND ')
 }
 
-async function ftsMatchIds(db: Db, query: string): Promise<string[]> {
+export async function resolveFtsMatchIds(db: Db, query: string): Promise<string[]> {
   const ftsQuery = escapeFtsQuery(query)
   if (!ftsQuery) {
     return []
@@ -120,6 +120,22 @@ async function ftsMatchIds(db: Db, query: string): Promise<string[]> {
 
     return rows.map((row) => row.id)
   }
+}
+
+async function coalesceFtsIds(
+  db: Db,
+  query: string | null,
+  precomputed?: readonly string[] | null,
+): Promise<string[] | null> {
+  if (!query) {
+    return null
+  }
+
+  if (precomputed !== undefined) {
+    return precomputed === null ? null : Array.from(precomputed)
+  }
+
+  return resolveFtsMatchIds(db, query)
 }
 
 function buildWhereClause(
@@ -173,11 +189,12 @@ export async function listPaged(
   filters: RequestFilters,
   cursorToken: string | null,
   limit: number,
+  ftsIds?: readonly string[] | null,
 ): Promise<PageResult<RequestListItem>> {
   const cursor = cursorToken ? decodeCursor(cursorToken) : null
   const direction = cursor?.direction ?? 'next'
-  const ftsIds = filters.query ? await ftsMatchIds(db, filters.query) : null
-  const rows = await fetchListRows(db, filters, cursor, ftsIds, limit)
+  const resolvedFtsIds = await coalesceFtsIds(db, filters.query, ftsIds)
+  const rows = await fetchListRows(db, filters, cursor, resolvedFtsIds, limit)
 
   const overflow = rows.length > limit
   const window = overflow ? rows.slice(0, limit) : rows
@@ -441,9 +458,10 @@ export async function listOffset(
   filters: RequestFilters,
   offset: number,
   limit: number,
+  ftsIds?: readonly string[] | null,
 ): Promise<PageResult<RequestListItem>> {
-  const ftsIds = filters.query ? await ftsMatchIds(db, filters.query) : null
-  const rows = await fetchListRows(db, filters, null, ftsIds, limit, offset)
+  const resolvedFtsIds = await coalesceFtsIds(db, filters.query, ftsIds)
+  const rows = await fetchListRows(db, filters, null, resolvedFtsIds, limit, offset)
 
   const hasNextPage = rows.length > limit
   const pageRows = hasNextPage ? rows.slice(0, limit) : rows
@@ -474,14 +492,15 @@ export async function listFromEnd(
   filters: RequestFilters,
   limit: number,
   total: number,
+  ftsIds?: readonly string[] | null,
 ): Promise<PageResult<RequestListItem>> {
   if (total <= 0 || limit <= 0) {
     return emptyPage
   }
 
   const lastPageSize = total % limit === 0 ? limit : total % limit
-  const ftsIds = filters.query ? await ftsMatchIds(db, filters.query) : null
-  const rows = await fetchListRows(db, filters, null, ftsIds, lastPageSize, 0, {
+  const resolvedFtsIds = await coalesceFtsIds(db, filters.query, ftsIds)
+  const rows = await fetchListRows(db, filters, null, resolvedFtsIds, lastPageSize, 0, {
     direction: 'prev',
     exact: true,
   })
@@ -500,9 +519,13 @@ export async function listFromEnd(
   }
 }
 
-export async function countMatching(db: Db, filters: RequestFilters): Promise<number> {
-  const ftsIds = filters.query ? await ftsMatchIds(db, filters.query) : null
-  const whereClause = buildWhereClause(filters, null, ftsIds)
+export async function countMatching(
+  db: Db,
+  filters: RequestFilters,
+  ftsIds?: readonly string[] | null,
+): Promise<number> {
+  const resolvedFtsIds = await coalesceFtsIds(db, filters.query, ftsIds)
+  const whereClause = buildWhereClause(filters, null, resolvedFtsIds)
 
   const rows = await db
     .select({ count: sql<number>`count(*)`.mapWith(Number) })
@@ -512,8 +535,12 @@ export async function countMatching(db: Db, filters: RequestFilters): Promise<nu
   return rows[0]?.count ?? 0
 }
 
-export async function getFacetCounts(db: Db, scope: RequestFilters): Promise<FacetCounts> {
-  const ftsIds = scope.query ? await ftsMatchIds(db, scope.query) : null
+export async function getFacetCounts(
+  db: Db,
+  scope: RequestFilters,
+  ftsIds?: readonly string[] | null,
+): Promise<FacetCounts> {
+  const resolvedFtsIds = await coalesceFtsIds(db, scope.query, ftsIds)
   const baseWhere = buildWhereClause(
     {
       ...scope,
@@ -523,7 +550,7 @@ export async function getFacetCounts(db: Db, scope: RequestFilters): Promise<Fac
       assigneeIds: [],
     },
     null,
-    ftsIds,
+    resolvedFtsIds,
   )
 
   const statusRows = await db
@@ -583,13 +610,17 @@ export async function getFacetCounts(db: Db, scope: RequestFilters): Promise<Fac
     assignee[key] = row.count
   }
 
-  const total = await countMatching(db, {
-    ...scope,
-    statuses: [],
-    priorities: [],
-    categoryIds: [],
-    assigneeIds: [],
-  })
+  const total = await countMatching(
+    db,
+    {
+      ...scope,
+      statuses: [],
+      priorities: [],
+      categoryIds: [],
+      assigneeIds: [],
+    },
+    resolvedFtsIds,
+  )
 
   return { status, priority, category, assignee, total }
 }

@@ -6,7 +6,8 @@ import { AssigneeControl } from '@/features/requests/components/assignee-control
 import { PriorityBadge } from '@/features/requests/components/priority-badge'
 import { StatusControl } from '@/features/requests/components/status-control'
 import { RequestMutationVersionProvider } from '@/features/requests/hooks/use-mutation-version'
-import { formatAbsoluteTime, initials } from '@/features/requests/lib/labels'
+import { LocalTimestamp } from '@/features/requests/components/local-timestamp'
+import { initials } from '@/features/requests/lib/labels'
 import type { AssigneeOption, RequestDetailDto } from '@/features/requests/types'
 
 type RequestDetailPanelProps = {
@@ -26,11 +27,7 @@ function DetailField({ label, children }: { label: string; children: ReactNode }
 }
 
 function Timestamp({ date }: { date: Date }) {
-  return (
-    <time className="tabular-nums" dateTime={date.toISOString()} title={formatAbsoluteTime(date)}>
-      {formatAbsoluteTime(date)}
-    </time>
-  )
+  return <LocalTimestamp date={date} className="tabular-nums" />
 }
 
 export function RequestDetailPanel({

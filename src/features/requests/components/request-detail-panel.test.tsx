@@ -1,9 +1,13 @@
 import { cleanup, render, screen } from '@testing-library/react'
 import { axe } from 'jest-axe'
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { RequestDetailPanel } from '@/features/requests/components/request-detail-panel'
 import type { RequestDetailDto } from '@/features/requests/types'
+
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ refresh: vi.fn() }),
+}))
 
 const request: RequestDetailDto = {
   id: 'req_assigned',

@@ -1,12 +1,12 @@
 import 'server-only'
 
-import { asc, eq, gt } from 'drizzle-orm'
+import { asc, eq, gt, inArray } from 'drizzle-orm'
 
 import type { ActivityRecord } from '@/lib/summarize-activity'
 import type { Db, DbExecutor } from '@/server/db/client'
 import { getDb } from '@/server/db/client'
 import { requestActivities, serviceRequests, users } from '@/server/db/schema'
-import type { ActivityType } from '@/server/db/schema'
+import type { ActivityType, RequestStatus } from '@/server/db/schema'
 
 export type ActivityInsert = {
   readonly id: string
@@ -37,6 +37,37 @@ export type ActivityListItem = {
   }
 }
 
+function isAssigneeActivity(row: { field: string | null; type: ActivityType }): boolean {
+  return row.field === 'assignee' || row.type === 'assigned' || row.type === 'unassigned'
+}
+
+function resolveAssigneeValue(
+  value: string | null,
+  namesById: ReadonlyMap<string, string>,
+): string | null {
+  if (value === null) {
+    return null
+  }
+
+  return namesById.get(value) ?? value
+}
+
+async function listUserNamesByIds(
+  ids: readonly string[],
+  db: DbExecutor,
+): Promise<Map<string, string>> {
+  if (ids.length === 0) {
+    return new Map()
+  }
+
+  const userRows = await db
+    .select({ id: users.id, name: users.name })
+    .from(users)
+    .where(inArray(users.id, [...ids]))
+
+  return new Map(userRows.map((row) => [row.id, row.name]))
+}
+
 export async function listActivitiesByRequestId(
   requestId: string,
   db: Db = getDb(),
@@ -60,13 +91,31 @@ export async function listActivitiesByRequestId(
     .where(eq(requestActivities.requestId, requestId))
     .orderBy(asc(requestActivities.createdAt))
 
+  const assigneeIds = new Set<string>()
+  for (const row of rows) {
+    if (!isAssigneeActivity(row)) {
+      continue
+    }
+
+    if (row.fromValue) {
+      assigneeIds.add(row.fromValue)
+    }
+    if (row.toValue) {
+      assigneeIds.add(row.toValue)
+    }
+  }
+
+  const namesById = await listUserNamesByIds([...assigneeIds], db)
+
   return rows.map((row) => ({
     id: row.id,
     requestId: row.requestId,
     type: row.type,
     field: row.field,
-    fromValue: row.fromValue,
-    toValue: row.toValue,
+    fromValue: isAssigneeActivity(row)
+      ? resolveAssigneeValue(row.fromValue, namesById)
+      : row.fromValue,
+    toValue: isAssigneeActivity(row) ? resolveAssigneeValue(row.toValue, namesById) : row.toValue,
     comment: row.comment,
     createdAt: row.createdAt,
     actor: {
@@ -111,11 +160,19 @@ export async function countActivitiesByRequestId(
 
 const ASSIGNMENT_STREAM_BATCH_SIZE = 1_000
 
+type AssignmentStreamRow = {
+  id: string
+  assigneeId: string | null
+  status: RequestStatus
+  createdAt: Date
+  resolvedAt: Date | null
+}
+
 export async function* streamAssignmentActivity(db: Db = getDb()): AsyncGenerator<ActivityRecord> {
   let cursor: string | null = null
 
   for (;;) {
-    const rows = await db
+    const rows: AssignmentStreamRow[] = await db
       .select({
         id: serviceRequests.id,
         assigneeId: serviceRequests.assigneeId,

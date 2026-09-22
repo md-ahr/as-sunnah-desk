@@ -8,6 +8,11 @@ import type { RequestUpdateResultDto } from '@/features/requests/types'
 import type { Result } from '@/lib/result'
 
 const updateAssignee = vi.fn()
+const refresh = vi.fn()
+
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ refresh }),
+}))
 
 vi.mock('@/features/requests/actions/update-assignee', () => ({
   updateAssignee: (...args: unknown[]) =>
