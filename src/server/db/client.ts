@@ -5,8 +5,8 @@ import type { Client } from '@libsql/client'
 import { drizzle } from 'drizzle-orm/libsql'
 import type { LibSQLDatabase } from 'drizzle-orm/libsql'
 
-import { env } from '@/server/env'
 import * as schema from '@/server/db/schema'
+import { libsqlClientConfig } from '@/server/db/libsql'
 
 export type Db = LibSQLDatabase<typeof schema>
 export type AppDb = Db & {
@@ -22,7 +22,7 @@ declare global {
 }
 
 function createLibsqlClient(): Client {
-  return createClient({ url: env.DATABASE_URL })
+  return createClient(libsqlClientConfig())
 }
 
 function getClient(): Client {

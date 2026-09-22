@@ -7,7 +7,7 @@ import { drizzle } from 'drizzle-orm/libsql'
 import { v7 as uuidv7 } from 'uuid'
 import type { AppDb } from '@/server/db/client'
 import '@/server/db/load-env'
-import { env } from '@/server/env'
+import { libsqlClientConfig } from '@/server/db/libsql'
 import * as schema from '@/server/db/schema'
 import { categories, requestActivities, serviceRequests, users } from '@/server/db/schema'
 import type { ActivityType, RequestPriority, RequestStatus } from '@/server/db/schema'
@@ -437,7 +437,7 @@ export async function seedDatabase(db: AppDb): Promise<void> {
 }
 
 async function main(): Promise<void> {
-  const client = createClient({ url: env.DATABASE_URL })
+  const client = createClient(libsqlClientConfig())
   const db = drizzle(client, { schema })
 
   try {

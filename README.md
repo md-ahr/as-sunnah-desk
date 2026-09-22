@@ -4,6 +4,12 @@ Service Request Management Portal — Senior Frontend Developer Practical Assess
 
 A Next.js 16 application for reviewing, searching, filtering, and managing internal service requests. Runs locally with SQLite — no paid external services required.
 
+## Live Demo
+
+**[https://as-sunnah-desk.vercel.app/](https://as-sunnah-desk.vercel.app/)**
+
+Sign in with the [test credentials](#test-credentials) below to explore the dashboard, request details, and insights page.
+
 ## Setup & Run
 
 ### Prerequisites
@@ -36,34 +42,34 @@ pnpm start
 
 ### Environment variables
 
-| Variable | Required | Default | Purpose |
-| --- | --- | --- | --- |
-| `DATABASE_URL` | No | `file:./data/app.db` | SQLite file path (relative to project root) |
-| `SESSION_PASSWORD` | **Yes** | — | iron-session seal password (minimum 32 characters) |
-| `NODE_ENV` | No | `development` | Set by Next.js; affects cookie `secure` flag |
+| Variable           | Required | Default              | Purpose                                            |
+| ------------------ | -------- | -------------------- | -------------------------------------------------- |
+| `DATABASE_URL`     | No       | `file:./data/app.db` | SQLite file path (relative to project root)        |
+| `SESSION_PASSWORD` | **Yes**  | —                    | iron-session seal password (minimum 32 characters) |
+| `NODE_ENV`         | No       | `development`        | Set by Next.js; affects cookie `secure` flag       |
 
 `.env` and `.env.local` are gitignored. Never commit real secrets.
 
 ### Scripts
 
-| Command | Purpose |
-| --- | --- |
-| `pnpm dev` | Start the dev server |
-| `pnpm verify` | Full quality gate (types, lint, knip, unit, build, e2e) |
-| `pnpm test:run` | Unit and integration tests |
-| `pnpm test:e2e` | Playwright against production build |
-| `pnpm db:migrate` | Apply pending migrations |
-| `pnpm db:seed` | Populate 12,000 requests + reference data |
-| `pnpm db:reset` | Delete database, migrate, and re-seed |
+| Command           | Purpose                                                 |
+| ----------------- | ------------------------------------------------------- |
+| `pnpm dev`        | Start the dev server                                    |
+| `pnpm verify`     | Full quality gate (types, lint, knip, unit, build, e2e) |
+| `pnpm test:run`   | Unit and integration tests                              |
+| `pnpm test:e2e`   | Playwright against production build                     |
+| `pnpm db:migrate` | Apply pending migrations                                |
+| `pnpm db:seed`    | Populate 12,000 requests + reference data               |
+| `pnpm db:reset`   | Delete database, migrate, and re-seed                   |
 
 ### Routes
 
-| Route | Auth | Purpose |
-| --- | --- | --- |
-| `/login` | Public | Login form |
-| `/requests` | Protected | Dashboard (default landing after login) |
+| Route            | Auth      | Purpose                                           |
+| ---------------- | --------- | ------------------------------------------------- |
+| `/login`         | Public    | Login form                                        |
+| `/requests`      | Protected | Dashboard (default landing after login)           |
 | `/requests/[id]` | Protected | Request detail + activity (e.g. `SR-2026-000142`) |
-| `/insights` | Protected | Per-assignee activity summary |
+| `/insights`      | Protected | Per-assignee activity summary                     |
 
 ### Troubleshooting
 
@@ -79,10 +85,10 @@ pnpm start
 
 ## Test Credentials
 
-**Local development and E2E only.**
+Works on the [live demo](https://as-sunnah-desk.vercel.app/) and for local development.
 
-| Email | Password |
-| --- | --- |
+| Email                 | Password     |
+| --------------------- | ------------ |
 | `admin@assunnah.test` | `test.admin` |
 
 One account is enough to review and update every request. Other seeded users can sign in with the same access — there are no separate roles.
