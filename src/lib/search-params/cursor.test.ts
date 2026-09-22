@@ -47,9 +47,10 @@ describe('search-params cursor', () => {
   })
 
   it('rejects cursors with invalid payloads', () => {
-    const token = Buffer.from(JSON.stringify({ sortValue: 42, direction: 'next' }), 'utf8').toString(
-      'base64url',
-    )
+    const token = Buffer.from(
+      JSON.stringify({ sortValue: 42, direction: 'next' }),
+      'utf8',
+    ).toString('base64url')
 
     expect(decodeCursor(token)).toBeNull()
   })

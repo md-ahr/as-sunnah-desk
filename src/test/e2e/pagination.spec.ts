@@ -39,7 +39,9 @@ test.describe('pagination', () => {
     await page.getByRole('link', { name: 'Page 21' }).click()
     await expect(page).toHaveURL(/cursor=/)
     await expect(page).toHaveURL(/page=21/)
-    await expect(page.locator('nav[aria-label="Pagination"] [aria-current="page"]')).toHaveText('21')
+    await expect(page.locator('nav[aria-label="Pagination"] [aria-current="page"]')).toHaveText(
+      '21',
+    )
 
     await page.getByRole('link', { name: /Page 1,200|Page 1200/ }).click()
     await expect(page).toHaveURL(/seek=end/)
