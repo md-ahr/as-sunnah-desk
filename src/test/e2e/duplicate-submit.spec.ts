@@ -17,7 +17,7 @@ test.describe('duplicate submit', () => {
     const before = await page.getByTestId('activity-entry').count()
 
     await statusTrigger.click()
-    const item = page.getByRole('menuitem').first()
+    const item = page.getByRole('menuitem', { name: 'In review' })
     await expect(item).toBeVisible()
 
     await item.evaluate((element) => {
@@ -25,6 +25,9 @@ test.describe('duplicate submit', () => {
       element.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }))
     })
 
+    await expect(page.getByTestId('status-badge')).toHaveText('In review')
+    await expect(page.getByText('Status changed to In review').first()).toBeVisible()
+    await expect(page.getByText(/changed status from New to In review/)).toBeVisible()
     await expect(page.getByTestId('activity-entry')).toHaveCount(before + 1)
   })
 })

@@ -5,18 +5,9 @@ import { DashboardNavigationProvider } from '@/features/requests/components/dash
 import { SearchInput } from '@/features/requests/components/search-input'
 import { parseSearchParams } from '@/lib/search-params/schema'
 
-const replace = vi.fn()
-
-vi.mock('next/navigation', () => ({
-  useRouter: () => ({ replace }),
-  usePathname: () => '/requests',
-  useSearchParams: () => new URLSearchParams('page=2'),
-}))
-
 describe('SearchInput', () => {
   beforeEach(() => {
     vi.useFakeTimers()
-    replace.mockReset()
   })
 
   afterEach(() => {
@@ -25,8 +16,9 @@ describe('SearchInput', () => {
     vi.useRealTimers()
   })
 
-  it('debounces router.replace and clears pagination params', async () => {
+  it('debounces form submission and clears pagination params', () => {
     const params = parseSearchParams({ page: '2' })
+    const requestSubmit = vi.fn()
 
     render(
       <DashboardNavigationProvider>
@@ -34,20 +26,23 @@ describe('SearchInput', () => {
       </DashboardNavigationProvider>,
     )
 
+    const form = screen.getByRole('searchbox', { name: 'Search requests' }).closest('form')
+    expect(form).not.toBeNull()
+    vi.spyOn(form as HTMLFormElement, 'requestSubmit').mockImplementation(requestSubmit)
+
     fireEvent.change(screen.getByLabelText('Search requests'), {
       target: { value: 'SR-2026' },
     })
 
-    expect(replace).not.toHaveBeenCalled()
+    expect(requestSubmit).not.toHaveBeenCalled()
 
     act(() => {
       vi.advanceTimersByTime(300)
     })
 
-    await act(async () => {
-      await Promise.resolve()
-    })
-
-    expect(replace).toHaveBeenCalledWith('/requests?q=SR-2026', { scroll: false })
+    expect(requestSubmit).toHaveBeenCalledTimes(1)
+    expect(form).toHaveAttribute('action', '/requests')
+    expect(screen.getByLabelText('Search requests')).toHaveValue('SR-2026')
+    expect(form?.querySelector('input[name="page"]')).toBeNull()
   })
 })

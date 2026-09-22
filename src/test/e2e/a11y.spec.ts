@@ -4,6 +4,7 @@ import AxeBuilder from '@axe-core/playwright'
 
 import { ADMIN_ACCOUNT, signInAsAdmin } from './helpers/auth'
 import { waitForDashboardClients } from './helpers/dashboard'
+import { waitForInsights } from './helpers/insights'
 
 const KEYBOARD_STATUS_REFERENCE = 'SR-2026-000908'
 
@@ -25,7 +26,7 @@ test.describe('accessibility', () => {
     await expect(
       page.getByRole('heading', { level: 1, name: 'Assignee performance' }),
     ).toBeVisible()
-    await expect(page.locator('tbody tr').first()).toBeVisible()
+    await waitForInsights(page)
 
     const results = await new AxeBuilder({ page }).disableRules(['color-contrast']).analyze()
     expect(results.violations).toEqual([])

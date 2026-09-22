@@ -1,12 +1,10 @@
 'use client'
 
 import { Loader2 } from 'lucide-react'
-import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 
 import { useDashboardNavigation } from '@/features/requests/components/dashboard-navigation'
 import { useDebouncedCallback } from '@/lib/hooks/use-debounced-callback'
-import { toRoute } from '@/lib/routes'
 import { searchParamHiddenFields } from '@/lib/search-params/form-fields'
 import type { SearchParams } from '@/lib/search-params/schema'
 import { cn } from '@/lib/utils'
@@ -19,28 +17,10 @@ export function SearchInput({ params }: SearchInputProps) {
   const [value, setValue] = useState(params.q ?? '')
   const formRef = useRef<HTMLFormElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
-  const router = useRouter()
-  const pathname = usePathname()
-  const searchParams = useSearchParams()
-  const { isPending, startNavigation } = useDashboardNavigation()
+  const { isPending } = useDashboardNavigation()
 
-  const commit = useDebouncedCallback((next: string) => {
-    const nextParams = new URLSearchParams(searchParams.toString())
-
-    if (next) {
-      nextParams.set('q', next)
-    } else {
-      nextParams.delete('q')
-    }
-
-    nextParams.delete('cursor')
-    nextParams.delete('page')
-    nextParams.delete('seek')
-
-    startNavigation(() => {
-      const query = nextParams.toString()
-      router.replace(toRoute(query ? `${pathname}?${query}` : pathname), { scroll: false })
-    })
+  const submitSearch = useDebouncedCallback(() => {
+    formRef.current?.requestSubmit()
   }, 300)
 
   useEffect(() => {
@@ -61,7 +41,7 @@ export function SearchInput({ params }: SearchInputProps) {
 
       if (event.key === 'Escape' && target === inputRef.current) {
         setValue('')
-        commit('')
+        submitSearch()
         inputRef.current?.blur()
       }
     }
@@ -70,7 +50,7 @@ export function SearchInput({ params }: SearchInputProps) {
     return () => {
       document.removeEventListener('keydown', onKeyDown)
     }
-  }, [commit])
+  }, [submitSearch])
 
   return (
     <form
@@ -78,9 +58,6 @@ export function SearchInput({ params }: SearchInputProps) {
       method="get"
       action="/requests"
       className="relative w-full max-w-md basis-full sm:basis-auto"
-      onSubmit={(event) => {
-        event.preventDefault()
-      }}
     >
       {searchParamHiddenFields(params, { q: true, cursor: true, page: true, seek: true })}
       <input
@@ -90,7 +67,7 @@ export function SearchInput({ params }: SearchInputProps) {
         value={value}
         onChange={(event) => {
           setValue(event.target.value)
-          commit(event.target.value)
+          submitSearch()
         }}
         aria-label="Search requests"
         aria-describedby="search-hint"

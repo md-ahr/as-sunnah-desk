@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test'
 
 import { signInAsAdmin } from './helpers/auth'
+import { waitForInsights } from './helpers/insights'
 
 test.describe('insights', () => {
   test('renders per-assignee summary rows and toggles rejected-records disclosure', async ({
@@ -12,7 +13,7 @@ test.describe('insights', () => {
     await expect(
       page.getByRole('heading', { level: 1, name: 'Assignee performance' }),
     ).toBeVisible()
-    await expect(page.getByRole('columnheader', { name: 'Assignee' })).toBeVisible()
+    await waitForInsights(page)
     await expect(page.getByRole('columnheader', { name: 'Resolved' })).toBeVisible()
 
     const rows = page.locator('tbody tr')
