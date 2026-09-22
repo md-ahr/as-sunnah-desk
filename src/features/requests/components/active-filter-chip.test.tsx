@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { ActiveFilterChip } from '@/features/requests/components/active-filter-chip'
 import { DashboardNavigationProvider } from '@/features/requests/components/dashboard-navigation'
+import type * as DashboardNavigationModule from '@/features/requests/components/dashboard-navigation'
 
 const replace = vi.fn()
 const startNavigation = vi.fn((callback: () => void) => {
@@ -17,7 +18,7 @@ vi.mock('next/navigation', () => ({
 }))
 
 vi.mock('@/features/requests/components/dashboard-navigation', async () => {
-  const actual = await vi.importActual<typeof import('@/features/requests/components/dashboard-navigation')>(
+  const actual = await vi.importActual<typeof DashboardNavigationModule>(
     '@/features/requests/components/dashboard-navigation',
   )
 
@@ -47,9 +48,9 @@ describe('ActiveFilterChip', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Remove New filter' }))
 
     expect(replace).toHaveBeenCalledOnce()
-    const [href, options] = replace.mock.calls[0] ?? []
-    expect(href).toBe('/requests?category=it-support&status=in_review')
-    expect(options).toEqual({ scroll: false })
+    expect(replace).toHaveBeenCalledWith('/requests?category=it-support&status=in_review', {
+      scroll: false,
+    })
   })
 
   it('has no accessibility violations', async () => {
