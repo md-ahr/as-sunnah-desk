@@ -6,26 +6,26 @@ This folder is the design record for the portal. It is written to be read **befo
 
 ## Read in this order
 
-| # | Document | What it answers |
-|---|---|---|
-| 01 | [Requirements traceability](./01-requirements-traceability.md) | Where is each assessment requirement satisfied, and how is it proven? |
-| 02 | [Tech stack decisions](./02-tech-stack-decisions.md) | What are we building with, and what did we reject? |
-| 03 | [System architecture](./03-system-architecture.md) | Layers, dependency rules, folder structure, request lifecycle. |
-| 04 | [Data model and scale](./04-data-model-and-scale.md) | Schema, indexes, pagination and search at 10,000+ rows. |
-| 05 | [Rendering and caching](./05-rendering-and-caching.md) | Server vs Client Components, Cache Components, PPR, prefetching. |
-| 06 | [Auth and security](./06-auth-and-security.md) | Sessions, the Data Access Layer, authorization, CSP, rate limiting. |
-| 07 | [Mutations and client state](./07-mutations-and-client-state.md) | Server Actions, optimistic updates, rollback, idempotency, concurrency. |
-| 08 | [UI states and accessibility](./08-ui-states-and-accessibility.md) | Loading, empty, error, not-found; responsive and keyboard behaviour. |
-| 09 | [Testing strategy](./09-testing-strategy.md) | What is unit tested, what is E2E tested, and why. |
-| 10 | [Activity summary utility](./10-activity-summary-utility.md) | The per-assignee aggregation utility: contract and algorithm. |
-| 11 | [Implementation roadmap](./11-implementation-roadmap.md) | Phased build order with a definition of done per phase. |
-| 12 | [Technical note](./12-technical-note.md) | The short submission write-up. Start here if you only read one file. |
-| 13 | [Next.js 16 reference](./13-nextjs-16-reference.md) | Version-specific API facts that differ from Next.js 14/15. |
-| 14 | [UI component plan](./14-ui-component-plan.md) | Required shadcn primitives, feature components, and phase checklist. |
-| 15 | [Local setup](./15-local-setup.md) | Env vars, `db:*` scripts, test credentials, routes, CI workflow. |
-| 16 | [Test guidelines](./16-test-guidelines.md) | Engineering standards: AAA, factories, isolation, POM, flakiness prevention. |
-| 17 | [UI design guidelines](./17-ui-design-guidelines.md) | Colour (60-30-10), typography, spacing, tokens, predefined block composition, and visual rules. |
-| 18 | [Security guidelines](./18-security-guidelines.md) | Engineering standards: API entry points (Actions, reads, Route Handlers), OWASP mapping, PR checklist, incident response. |
+| #   | Document                                                           | What it answers                                                                                                           |
+| --- | ------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------- |
+| 01  | [Requirements traceability](./01-requirements-traceability.md)     | Where is each assessment requirement satisfied, and how is it proven?                                                     |
+| 02  | [Tech stack decisions](./02-tech-stack-decisions.md)               | What are we building with, and what did we reject?                                                                        |
+| 03  | [System architecture](./03-system-architecture.md)                 | Layers, dependency rules, folder structure, request lifecycle.                                                            |
+| 04  | [Data model and scale](./04-data-model-and-scale.md)               | Schema, indexes, pagination and search at 10,000+ rows.                                                                   |
+| 05  | [Rendering and caching](./05-rendering-and-caching.md)             | Server vs Client Components, Cache Components, PPR, prefetching.                                                          |
+| 06  | [Auth and security](./06-auth-and-security.md)                     | Sessions, the Data Access Layer, authorization, CSP, rate limiting.                                                       |
+| 07  | [Mutations and client state](./07-mutations-and-client-state.md)   | Server Actions, optimistic updates, rollback, idempotency, concurrency.                                                   |
+| 08  | [UI states and accessibility](./08-ui-states-and-accessibility.md) | Loading, empty, error, not-found; responsive and keyboard behaviour.                                                      |
+| 09  | [Testing strategy](./09-testing-strategy.md)                       | What is unit tested, what is E2E tested, and why.                                                                         |
+| 10  | [Activity summary utility](./10-activity-summary-utility.md)       | The per-assignee aggregation utility: contract and algorithm.                                                             |
+| 11  | [Implementation roadmap](./11-implementation-roadmap.md)           | Phased build order with a definition of done per phase.                                                                   |
+| 12  | [Technical note](./12-technical-note.md)                           | The short submission write-up. Start here if you only read one file.                                                      |
+| 13  | [Next.js 16 reference](./13-nextjs-16-reference.md)                | Version-specific API facts that differ from Next.js 14/15.                                                                |
+| 14  | [UI component plan](./14-ui-component-plan.md)                     | Required shadcn primitives, feature components, and phase checklist.                                                      |
+| 15  | [Local setup](./15-local-setup.md)                                 | Env vars, `db:*` scripts, test credentials, routes, CI workflow.                                                          |
+| 16  | [Test guidelines](./16-test-guidelines.md)                         | Engineering standards: AAA, factories, isolation, POM, flakiness prevention.                                              |
+| 17  | [UI design guidelines](./17-ui-design-guidelines.md)               | Colour (60-30-10), typography, spacing, tokens, predefined block composition, and visual rules.                           |
+| 18  | [Security guidelines](./18-security-guidelines.md)                 | Engineering standards: API entry points (Actions, reads, Route Handlers), OWASP mapping, PR checklist, incident response. |
 
 ## The short version
 

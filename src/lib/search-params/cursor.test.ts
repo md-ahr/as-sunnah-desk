@@ -16,13 +16,42 @@ describe('search-params cursor', () => {
   })
 
   it('round-trips a cursor token', () => {
-    const cursor = { id: 'req_123', sortValue: 1_735_000_000_000 }
+    const cursor = { id: 'req_123', sortValue: 1_735_000_000_000, direction: 'next' as const }
 
     expect(decodeCursor(encodeCursor(cursor))).toEqual(cursor)
   })
 
   it('returns null for malformed tokens', () => {
     expect(decodeCursor('not-a-cursor')).toBeNull()
+  })
+
+  it('defaults missing direction to next', () => {
+    const token = Buffer.from(JSON.stringify({ id: 'req_1', sortValue: 42 }), 'utf8').toString(
+      'base64url',
+    )
+
+    expect(decodeCursor(token)).toEqual({
+      id: 'req_1',
+      sortValue: 42,
+      direction: 'next',
+    })
+  })
+
+  it('rejects cursors with invalid direction values', () => {
+    const token = Buffer.from(
+      JSON.stringify({ id: 'req_1', sortValue: 42, direction: 'sideways' }),
+      'utf8',
+    ).toString('base64url')
+
+    expect(decodeCursor(token)).toBeNull()
+  })
+
+  it('rejects cursors with invalid payloads', () => {
+    const token = Buffer.from(JSON.stringify({ sortValue: 42, direction: 'next' }), 'utf8').toString(
+      'base64url',
+    )
+
+    expect(decodeCursor(token)).toBeNull()
   })
 
   it('builds sort values from row data', () => {
@@ -34,7 +63,10 @@ describe('search-params cursor', () => {
     }
 
     expect(cursorFromRow('updated_desc', row).sortValue).toBe(row.updatedAt.getTime())
+    expect(cursorFromRow('updated_asc', row, 'prev').sortValue).toBe(row.updatedAt.getTime())
     expect(cursorFromRow('created_desc', row).sortValue).toBe(row.createdAt.getTime())
     expect(cursorFromRow('priority_desc', row).sortValue).toBe(3)
+    expect(cursorFromRow('priority_asc', row).sortValue).toBe(3)
+    expect(isSortKey('priority_asc')).toBe(true)
   })
 })

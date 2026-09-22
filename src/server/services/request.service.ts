@@ -3,12 +3,12 @@ import 'server-only'
 import { cacheLife, cacheTag } from 'next/cache'
 import { v7 as uuidv7 } from 'uuid'
 
+import { OFFSET_PAGE_LIMIT } from '@/lib/pagination/constants'
 import type { SearchParams } from '@/lib/search-params/schema'
 import { appError } from '@/lib/app-error'
 import { ok, err } from '@/lib/result'
 import type { Result } from '@/lib/result'
 import type { AuthenticatedUser } from '@/server/auth/dal'
-import { can } from '@/server/auth/permissions'
 import { tags } from '@/server/cache/tags'
 import { getDb } from '@/server/db/client'
 import type { CategoryDto } from '@/server/repositories/reference.repository'
@@ -30,6 +30,7 @@ import {
   getById,
   getByReference as findRequestByReference,
   getFacetCounts,
+  listFromEnd,
   listOffset,
   listPaged,
   updateAssigneeIfVersionMatches,
@@ -42,11 +43,6 @@ import type {
   UpdateStatusInput,
 } from '@/server/services/request-update.types'
 import { canTransition } from '@/lib/request-status'
-import {
-  canAssignToUser,
-  canUpdateRequestAssignee,
-  canUpdateRequestStatus,
-} from '@/server/auth/request-permissions'
 
 export type { RequestUpdateResult, UpdateAssigneeInput, UpdateStatusInput }
 
@@ -54,8 +50,18 @@ export type { ActivityListItem, RequestDetail }
 
 export type RequestListResult = {
   readonly page: PageResult<RequestListItem>
-  readonly total: number | `${number}+`
+  readonly total: number
   readonly facets: FacetCounts
+}
+
+function emptyRequestPage(): PageResult<RequestListItem> {
+  return {
+    items: [],
+    nextCursor: null,
+    previousCursor: null,
+    hasNextPage: false,
+    hasPreviousPage: false,
+  }
 }
 
 function resolveCategoryIds(
@@ -80,56 +86,37 @@ function toRepositoryFilters(
   }
 }
 
-function scopeFilters(filters: RequestFilters, user: AuthenticatedUser): RequestFilters {
-  if (can(user, 'request:read:all')) {
-    return filters
-  }
-
-  return {
-    ...filters,
-    assigneeIds: [user.id],
-  }
-}
-
-function scopeForFacets(user: AuthenticatedUser): RequestFilters {
-  if (can(user, 'request:read:all')) {
-    return {
-      query: null,
-      statuses: [],
-      priorities: [],
-      categoryIds: [],
-      assigneeIds: [],
-      sort: 'updated_desc',
-    }
-  }
-
-  return {
-    query: null,
-    statuses: [],
-    priorities: [],
-    categoryIds: [],
-    assigneeIds: [user.id],
-    sort: 'updated_desc',
-  }
-}
-
 export async function listRequests(
   params: SearchParams,
-  user: AuthenticatedUser,
   categories: readonly CategoryDto[],
 ): Promise<Result<RequestListResult>> {
   const db = getDb()
-  const filters = scopeFilters(toRepositoryFilters(params, categories), user)
-  const facetScope = {
-    ...scopeForFacets(user),
+  const filters = toRepositoryFilters(params, categories)
+  const facetScope: RequestFilters = {
     query: filters.query,
+    statuses: [],
+    priorities: [],
+    categoryIds: [],
+    assigneeIds: [],
+    sort: 'updated_desc',
+  }
+
+  if (params.seek === 'end') {
+    const [total, facets] = await Promise.all([
+      countMatching(db, filters),
+      getCachedFacetCounts(facetScope),
+    ])
+    const page =
+      total > 0 ? await listFromEnd(db, filters, params.perPage, total) : emptyRequestPage()
+
+    return ok({ page, total, facets })
   }
 
   let page: PageResult<RequestListItem>
 
   if (params.cursor) {
     page = await listPaged(db, filters, params.cursor, params.perPage)
-  } else if (params.page > 1) {
+  } else if (params.page > 1 && params.page <= OFFSET_PAGE_LIMIT) {
     page = await listOffset(db, filters, (params.page - 1) * params.perPage, params.perPage)
   } else {
     page = await listPaged(db, filters, null, params.perPage)
@@ -137,9 +124,7 @@ export async function listRequests(
 
   const [total, facets] = await Promise.all([
     countMatching(db, filters),
-    can(user, 'request:read:all')
-      ? getCachedFacetCounts(facetScope)
-      : getFacetCounts(db, facetScope),
+    getCachedFacetCounts(facetScope),
   ])
 
   return ok({ page, total, facets })
@@ -153,24 +138,8 @@ async function getCachedFacetCounts(scope: RequestFilters): Promise<FacetCounts>
   return getFacetCounts(getDb(), scope)
 }
 
-function canViewRequest(request: RequestDetail, user: AuthenticatedUser): boolean {
-  if (can(user, 'request:read:all')) {
-    return true
-  }
-
-  return request.assignee?.id === user.id
-}
-
-export async function getByReference(
-  reference: string,
-  user: AuthenticatedUser,
-): Promise<RequestDetail | null> {
-  const request = await findRequestByReference(reference)
-  if (!request || !canViewRequest(request, user)) {
-    return null
-  }
-
-  return request
+export async function getByReference(reference: string): Promise<RequestDetail | null> {
+  return findRequestByReference(reference)
 }
 
 export async function listRequestActivity(requestId: string): Promise<ActivityListItem[]> {
@@ -203,10 +172,6 @@ export async function updateStatus(
       const request = await getById(input.id)
       if (!request) {
         return err(appError('NOT_FOUND', 'Request not found.'))
-      }
-
-      if (!canUpdateRequestStatus(user, request)) {
-        return err(appError('FORBIDDEN', 'You do not have permission to update this request.'))
       }
 
       if (request.status === input.status) {
@@ -288,14 +253,6 @@ export async function updateAssignee(
       const request = await getById(input.id)
       if (!request) {
         return err(appError('NOT_FOUND', 'Request not found.'))
-      }
-
-      if (!canUpdateRequestAssignee(user, request)) {
-        return err(appError('FORBIDDEN', 'You do not have permission to update this request.'))
-      }
-
-      if (!canAssignToUser(user, input.assigneeId)) {
-        return err(appError('FORBIDDEN', 'You do not have permission to assign to that user.'))
       }
 
       if (input.assigneeId !== null) {

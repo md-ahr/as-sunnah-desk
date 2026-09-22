@@ -80,9 +80,7 @@ describe('RequestDetailPanel', () => {
   })
 
   it('has no accessibility violations', async () => {
-    const { container } = render(
-      <RequestDetailPanel request={request} {...readOnlyPanelProps} />,
-    )
+    const { container } = render(<RequestDetailPanel request={request} {...readOnlyPanelProps} />)
     const results = await axe(container)
     expect(results.violations).toEqual([])
   })

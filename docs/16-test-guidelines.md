@@ -49,12 +49,12 @@ src/**/*.spec.tsx            # Component tests (sync Client Components only)
 src/test/e2e/**/*.spec.ts    # Playwright E2E
 ```
 
-| Layer | Runner | Environment | Real I/O |
-|---|---|---|---|
-| Unit | Vitest | `node` or `jsdom` | None |
-| Integration | Vitest | `node` | In-memory SQLite |
-| Component | Vitest | `jsdom` | None (actions mocked at module boundary) |
-| E2E | Playwright | Chromium | Production build + seeded SQLite file |
+| Layer       | Runner     | Environment       | Real I/O                                 |
+| ----------- | ---------- | ----------------- | ---------------------------------------- |
+| Unit        | Vitest     | `node` or `jsdom` | None                                     |
+| Integration | Vitest     | `node`            | In-memory SQLite                         |
+| Component   | Vitest     | `jsdom`           | None (actions mocked at module boundary) |
+| E2E         | Playwright | Chromium          | Production build + seeded SQLite file    |
 
 Strategy and coverage targets: [09 · Testing strategy](./09-testing-strategy.md).
 
@@ -66,12 +66,12 @@ These apply to **every** layer.
 
 ### Ban explicit time waits
 
-| Forbidden | Required instead |
-|---|---|
-| `await page.waitForTimeout(n)` | Playwright web-first assertions: `toBeVisible()`, `toHaveText()`, … |
-| `await new Promise(r => setTimeout(r, n))` | `waitFor(() => …)` (RTL) or `vi.waitFor()` (Vitest) |
-| `sleep(n)` / `delay(n)` helpers | Advance fake timers: `vi.advanceTimersByTime(n)` |
-| Polling loops with fixed `setInterval` | Assertion retries built into the runner |
+| Forbidden                                  | Required instead                                                    |
+| ------------------------------------------ | ------------------------------------------------------------------- |
+| `await page.waitForTimeout(n)`             | Playwright web-first assertions: `toBeVisible()`, `toHaveText()`, … |
+| `await new Promise(r => setTimeout(r, n))` | `waitFor(() => …)` (RTL) or `vi.waitFor()` (Vitest)                 |
+| `sleep(n)` / `delay(n)` helpers            | Advance fake timers: `vi.advanceTimersByTime(n)`                    |
+| Polling loops with fixed `setInterval`     | Assertion retries built into the runner                             |
 
 Playwright and RTL already retry until timeout. Adding sleep hides race conditions and makes CI non-deterministic.
 
@@ -100,11 +100,11 @@ Add `data-testid` in production components only when no semantic role exists. Pr
 
 ### Network isolation
 
-| Layer | External HTTP |
-|---|---|
-| Unit | Not applicable — no I/O |
-| Integration | **Blocked.** `undici`/`fetch` must not reach the public internet. Use MSW Node (`setupServer`) or `vi.stubGlobal('fetch', …)` for any outbound HTTP the code under test performs. |
-| E2E | **Blocked** for third parties. Use `page.route()` or MSW in `globalSetup` for anything outside `localhost`. Server Actions and RSC payloads stay real — do not mock the app's own routes unless simulating failure. |
+| Layer       | External HTTP                                                                                                                                                                                                       |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Unit        | Not applicable — no I/O                                                                                                                                                                                             |
+| Integration | **Blocked.** `undici`/`fetch` must not reach the public internet. Use MSW Node (`setupServer`) or `vi.stubGlobal('fetch', …)` for any outbound HTTP the code under test performs.                                   |
+| E2E         | **Blocked** for third parties. Use `page.route()` or MSW in `globalSetup` for anything outside `localhost`. Server Actions and RSC payloads stay real — do not mock the app's own routes unless simulating failure. |
 
 > **Note on MSW in this codebase.** Most reads and writes never touch client-side HTTP — Server Components query SQLite directly and mutations are Server Actions. MSW is still mandatory wherever an HTTP client boundary exists (webhooks, future integrations, `route.ts` proxies). For Server Action failure simulation in E2E, use Playwright `page.route()` as shown in [09 · Testing strategy](./09-testing-strategy.md#layer-4--end-to-end-tests).
 
@@ -217,13 +217,13 @@ Rules:
 
 Dependencies enter through **constructor parameters, function arguments, or module seams** — never hard-coded globals inside the unit under test.
 
-| Dependency | Mock strategy |
-|---|---|
-| Pure function | No mocks |
-| Module with side effects | `vi.mock('@/server/…', () => ({ … }))` at boundary only |
-| Clock | `vi.useFakeTimers()` |
-| Randomness | Inject seed or stub `Math.random` |
-| Environment | `vi.stubEnv('KEY', 'value')` — always unstub in `afterEach` |
+| Dependency               | Mock strategy                                               |
+| ------------------------ | ----------------------------------------------------------- |
+| Pure function            | No mocks                                                    |
+| Module with side effects | `vi.mock('@/server/…', () => ({ … }))` at boundary only     |
+| Clock                    | `vi.useFakeTimers()`                                        |
+| Randomness               | Inject seed or stub `Math.random`                           |
+| Environment              | `vi.stubEnv('KEY', 'value')` — always unstub in `afterEach` |
 
 **Mock at the boundary, not the leaf.** If testing `RequestService.updateStatus`, inject a real in-memory DB in integration tests; in a pure unit test for a helper, pass a stub repository interface:
 
@@ -235,7 +235,8 @@ import { createIdempotencyGuard } from '@/server/services/idempotency'
 describe('createIdempotencyGuard', () => {
   it('returns cached result for duplicate key', async () => {
     // Arrange
-    const findByKey = vi.fn<RequestRepository['findActivityByIdempotencyKey']>()
+    const findByKey = vi
+      .fn<RequestRepository['findActivityByIdempotencyKey']>()
       .mockResolvedValue({ id: 'act_1', requestId: 'req_1' })
     const repo: Pick<RequestRepository, 'findActivityByIdempotencyKey'> = { findByKey }
     const guard = createIdempotencyGuard(repo)
@@ -413,7 +414,7 @@ test('paginates without duplicates', async ({ dbContext: { db } }) => {
   const seen = new Set<string>()
   let cursor: string | null = null
   do {
-    const page = await listPaged(db, { /* filters */ }, cursor, 25)
+    const page = await listPaged(db, {/* filters */}, cursor, 25)
     for (const row of page.items) {
       expect(seen.has(row.id)).toBe(false)
       seen.add(row.id)
@@ -432,10 +433,10 @@ test('paginates without duplicates', async ({ dbContext: { db } }) => {
 
 Two valid patterns — pick one per suite, never mix:
 
-| Pattern | When | Mechanism |
-|---|---|---|
-| **Fresh DB** (default here) | SQLite `:memory:` | New `createTestDb()` per describe/fixture — discard on `dispose()` |
-| **Rollback wrapper** | File-backed or shared Postgres | `BEGIN` → run test → `ROLLBACK` in `afterEach` |
+| Pattern                     | When                           | Mechanism                                                          |
+| --------------------------- | ------------------------------ | ------------------------------------------------------------------ |
+| **Fresh DB** (default here) | SQLite `:memory:`              | New `createTestDb()` per describe/fixture — discard on `dispose()` |
+| **Rollback wrapper**        | File-backed or shared Postgres | `BEGIN` → run test → `ROLLBACK` in `afterEach`                     |
 
 Rollback example (Postgres or file SQLite):
 
@@ -588,9 +589,7 @@ export class RequestsPage {
   }
 
   statusBadge(reference: string): Locator {
-    return this.page
-      .getByRole('row', { name: new RegExp(reference) })
-      .getByTestId('status-badge')
+    return this.page.getByRole('row', { name: new RegExp(reference) }).getByTestId('status-badge')
   }
 }
 ```
@@ -796,18 +795,18 @@ await Promise.all([
 
 Use this in code review for every new spec.
 
-| # | Check |
-|---|---|
-| 1 | AAA sections visible or clearly separated |
-| 2 | No `waitForTimeout`, `sleep`, or bare `setTimeout` for synchronization |
-| 3 | Factories used — no 50-line inline object literals |
-| 4 | `afterEach` / fixture teardown clears mocks, timers, MSW handlers, DOM |
-| 5 | Integration test uses real DB — no `vi.mock` on repositories |
-| 6 | E2E locators are role or `data-testid` only |
-| 7 | E2E auth via `storageState`, not login form |
-| 8 | Mutations target `SR-2026-0009xx` or API-created records |
-| 9 | External HTTP blocked or explicitly stubbed |
-| 10 | Spec passes with `--repeat-each=10` locally |
+| #   | Check                                                                  |
+| --- | ---------------------------------------------------------------------- |
+| 1   | AAA sections visible or clearly separated                              |
+| 2   | No `waitForTimeout`, `sleep`, or bare `setTimeout` for synchronization |
+| 3   | Factories used — no 50-line inline object literals                     |
+| 4   | `afterEach` / fixture teardown clears mocks, timers, MSW handlers, DOM |
+| 5   | Integration test uses real DB — no `vi.mock` on repositories           |
+| 6   | E2E locators are role or `data-testid` only                            |
+| 7   | E2E auth via `storageState`, not login form                            |
+| 8   | Mutations target `SR-2026-0009xx` or API-created records               |
+| 9   | External HTTP blocked or explicitly stubbed                            |
+| 10  | Spec passes with `--repeat-each=10` locally                            |
 
 Commands:
 
@@ -820,16 +819,16 @@ pnpm playwright test --repeat-each=10 requests/search.spec.ts
 
 ## Anti-patterns catalog
 
-| Anti-pattern | Why it fails | Fix |
-|---|---|---|
-| Shared global `db` singleton | Parallel workers race | `test.extend` fixture per scope |
-| `await page.waitForTimeout(1000)` | Masks timing bugs | Web-first assertions |
-| Static `fixtures/requests.json` | Drifts from schema | `buildRequest()` factory |
-| Mocking `listPaged` in service tests | Tests the mock, not SQL | Integration test against SQLite |
-| CSS selector `.status-badge` | Breaks on Tailwind refactor | `getByTestId('status-badge')` |
-| UI login in every spec | Slow, brittle | `storageState` + global setup |
+| Anti-pattern                                                            | Why it fails                                  | Fix                                  |
+| ----------------------------------------------------------------------- | --------------------------------------------- | ------------------------------------ |
+| Shared global `db` singleton                                            | Parallel workers race                         | `test.extend` fixture per scope      |
+| `await page.waitForTimeout(1000)`                                       | Masks timing bugs                             | Web-first assertions                 |
+| Static `fixtures/requests.json`                                         | Drifts from schema                            | `buildRequest()` factory             |
+| Mocking `listPaged` in service tests                                    | Tests the mock, not SQL                       | Integration test against SQLite      |
+| CSS selector `.status-badge`                                            | Breaks on Tailwind refactor                   | `getByTestId('status-badge')`        |
+| UI login in every spec                                                  | Slow, brittle                                 | `storageState` + global setup        |
 | Asserting implementation (`toHaveBeenCalledWith`) as the **only** check | Refactor breaks test without behaviour change | Assert outcome; spy is supplementary |
-| Missing `vi.useRealTimers()` | Leaks into next file | Global + per-file `afterEach` |
+| Missing `vi.useRealTimers()`                                            | Leaks into next file                          | Global + per-file `afterEach`        |
 
 ---
 
@@ -846,8 +845,8 @@ Full gate: `pnpm verify` ([15 · Local setup](./15-local-setup.md#ci-workflow)).
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
-    "verify": "pnpm typecheck && pnpm lint && pnpm knip && pnpm test:run && pnpm build && pnpm test:e2e"
-  }
+    "verify": "pnpm typecheck && pnpm lint && pnpm knip && pnpm test:run && pnpm build && pnpm test:e2e",
+  },
 }
 ```
 
@@ -875,10 +874,10 @@ Recommended ESLint restrictions (add to `eslint.config.mjs` in Phase 0):
 
 ## Related documents
 
-| Document | Relationship |
-|---|---|
-| [09 · Testing strategy](./09-testing-strategy.md) | What each layer covers |
-| [03 · System architecture](./03-system-architecture.md) | Layer boundaries and `src/test/` layout |
-| [08 · UI states and accessibility](./08-ui-states-and-accessibility.md) | Locator and axe requirements |
-| [15 · Local setup](./15-local-setup.md) | Test accounts, CI, `verify` |
-| [11 · Implementation roadmap](./11-implementation-roadmap.md) | Phase 0 test scaffolding tasks |
+| Document                                                                | Relationship                            |
+| ----------------------------------------------------------------------- | --------------------------------------- |
+| [09 · Testing strategy](./09-testing-strategy.md)                       | What each layer covers                  |
+| [03 · System architecture](./03-system-architecture.md)                 | Layer boundaries and `src/test/` layout |
+| [08 · UI states and accessibility](./08-ui-states-and-accessibility.md) | Locator and axe requirements            |
+| [15 · Local setup](./15-local-setup.md)                                 | Test accounts, CI, `verify`             |
+| [11 · Implementation roadmap](./11-implementation-roadmap.md)           | Phase 0 test scaffolding tasks          |

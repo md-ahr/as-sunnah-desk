@@ -147,49 +147,111 @@
 }
 
 @layer components {
-  @media (max-width: 639px) {
-    .request-table thead {
+  /* Mobile (<768px): one DOM, card reflow via CSS */
+  @media (max-width: 767px) {
+    .request-table thead,
+    .insights-table thead {
       display: none;
     }
 
     .request-table .request-table-row {
       display: grid;
-      gap: 0.75rem;
+      gap: 0.625rem;
       padding: 1rem;
     }
 
-    .request-table .request-table-row > :is(th, td) {
+    .insights-table,
+    .insights-table tbody {
+      display: block;
+      width: 100%;
+    }
+
+    .insights-table .insights-table-row {
       display: grid;
-      grid-template-columns: minmax(6rem, 35%) 1fr;
-      gap: 0.75rem;
+      gap: 0.5rem;
+      width: 100%;
+      box-sizing: border-box;
+      padding: 1rem;
+    }
+
+    .request-table .request-table-row > :is(th, td),
+    .insights-table .insights-table-row > :is(th, td) {
+      display: grid;
+      grid-template-columns: minmax(6.5rem, 38%) 1fr;
+      gap: 0.5rem 0.75rem;
       align-items: start;
       padding: 0;
       border: 0;
     }
 
-    .request-table .request-table-row > :is(th, td)[data-mobile-hidden] {
-      display: none;
+    .request-table .request-table-row > [data-label='Subject'] {
+      grid-template-columns: 1fr;
     }
 
-    .request-table .request-table-row > :is(th, td)::before {
+    .request-table .request-table-row > [data-label='Subject']::before {
+      margin-bottom: 0.125rem;
+    }
+
+    .insights-table .insights-table-row > [data-label='Assignee'] {
+      grid-template-columns: minmax(6.5rem, 38%) minmax(0, 1fr);
+      align-items: center;
+    }
+
+    .insights-table .insights-table-row > td {
+      grid-template-columns: minmax(6.5rem, 38%) max-content;
+      align-items: center;
+      justify-content: start;
+      text-align: left;
+    }
+
+    .request-table .request-table-row > [data-label='Status'],
+    .request-table .request-table-row > [data-label='Priority'] {
+      grid-template-columns: minmax(6.5rem, 38%) max-content;
+    }
+
+    .request-table-inline-value {
+      width: max-content;
+      max-width: 100%;
+    }
+
+    .request-table .request-table-row > :is(th, td)::before,
+    .insights-table .insights-table-row > :is(th, td)::before {
       content: attr(data-label);
       font-size: 0.75rem;
       font-weight: 600;
+      line-height: 1.25rem;
       color: var(--muted-foreground);
     }
-  }
 
-  @media (min-width: 640px) and (max-width: 1023px) {
-    .request-table [data-mobile-hidden] {
-      display: none;
+    .request-table .request-table-row > [data-label='View'] {
+      grid-column: 1 / -1;
+      margin-top: 0.25rem;
+      padding-top: 0.75rem;
+      border-top: 1px solid var(--border);
+      text-align: right;
+    }
+
+    .request-table .request-table-row > [data-label='View']::before {
+      content: none;
     }
   }
 
-  @media (min-width: 1024px) {
-    .request-table-head {
+  @media (min-width: 768px) {
+    .request-table-scroll,
+    .insights-table-scroll {
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .request-table-head,
+    .insights-table-head {
       position: sticky;
       top: 0;
       z-index: 1;
+    }
+
+    .request-table-head th,
+    .insights-table-head th {
+      background-color: color-mix(in oklab, var(--muted) 60%, transparent);
     }
   }
 }

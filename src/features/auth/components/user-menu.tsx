@@ -1,6 +1,6 @@
 'use client'
 
-import { LogOutIcon } from 'lucide-react'
+import { ChevronDownIcon, LogOutIcon } from 'lucide-react'
 
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import {
@@ -13,6 +13,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import type { SessionUser } from '@/features/auth/types'
+import { cn } from '@/lib/utils'
 
 import { logout } from '../actions/logout'
 
@@ -35,23 +36,39 @@ export function UserMenu({ user }: UserMenuProps) {
     <>
       <form id="portal-logout-form" action={logout} hidden />
       <DropdownMenu>
-        <DropdownMenuTrigger className="rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background">
-          <Avatar size="default">
-            <AvatarFallback className="text-xs font-medium">{initials(user.name)}</AvatarFallback>
+        <DropdownMenuTrigger
+          aria-label={`Account menu, ${user.name}`}
+          className={cn(
+            'inline-flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-md px-1.5',
+            'text-foreground text-sm font-medium outline-none',
+            'hover:bg-accent',
+            'focus-visible:ring-ring focus-visible:ring-offset-background focus-visible:ring-2 focus-visible:ring-offset-2',
+            'sm:min-h-9 sm:min-w-0 sm:px-2',
+          )}
+        >
+          <Avatar size="sm">
+            <AvatarFallback className="font-medium">{initials(user.name)}</AvatarFallback>
           </Avatar>
-          <span className="sr-only">Account menu, {user.name}</span>
+          <span aria-hidden="true" className="hidden max-w-40 truncate sm:inline">
+            {user.name}
+          </span>
+          <ChevronDownIcon
+            aria-hidden="true"
+            className="text-muted-foreground hidden size-3.5 sm:block"
+          />
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-56">
           <DropdownMenuGroup>
             <DropdownMenuLabel className="font-normal">
               <div className="flex flex-col gap-0.5">
-                <p className="truncate text-sm font-medium text-foreground">{user.name}</p>
-                <p className="truncate text-xs text-muted-foreground">{user.email}</p>
+                <p className="text-foreground truncate text-sm font-medium">{user.name}</p>
+                <p className="text-muted-foreground truncate text-xs">{user.email}</p>
               </div>
             </DropdownMenuLabel>
           </DropdownMenuGroup>
           <DropdownMenuSeparator />
           <DropdownMenuItem
+            className="cursor-pointer"
             onClick={() => {
               const form = document.getElementById('portal-logout-form')
               if (form instanceof HTMLFormElement) {

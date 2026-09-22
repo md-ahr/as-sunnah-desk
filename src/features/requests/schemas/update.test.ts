@@ -30,9 +30,30 @@ describe('update schemas', () => {
     ).toBe(true)
   })
 
+  it('accepts unassigning a request', () => {
+    expect(
+      updateAssigneeSchema.safeParse({
+        id: 'req_1',
+        assigneeId: null,
+        version: 2,
+        idempotencyKey: '33333333-3333-4333-8333-333333333333',
+      }).success,
+    ).toBe(true)
+  })
+
   it('returns field errors for invalid payloads', () => {
-    const status = parseUpdateStatusInput({ id: '', status: 'invalid', version: -1, idempotencyKey: 'x' })
-    const assignee = parseUpdateAssigneeInput({ id: '', assigneeId: 'x', version: -1, idempotencyKey: 'x' })
+    const status = parseUpdateStatusInput({
+      id: '',
+      status: 'invalid',
+      version: -1,
+      idempotencyKey: 'x',
+    })
+    const assignee = parseUpdateAssigneeInput({
+      id: '',
+      assigneeId: 'x',
+      version: -1,
+      idempotencyKey: 'x',
+    })
 
     expect(status.ok).toBe(false)
     expect(assignee.ok).toBe(false)

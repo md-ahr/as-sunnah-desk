@@ -25,7 +25,6 @@ describe('auth.service loginWithCredentials integration', () => {
       id: 'user_agent',
       email: 'agent@assunnah.test',
       name: 'Agent User',
-      role: 'agent',
       passwordHash,
     })
 
@@ -103,7 +102,6 @@ describe('auth.service loginWithCredentials integration', () => {
       id: 'user_inactive',
       email: 'inactive@assunnah.test',
       name: 'Inactive User',
-      role: 'viewer',
       passwordHash,
       isActive: false,
     })

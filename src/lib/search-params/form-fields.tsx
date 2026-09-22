@@ -50,6 +50,10 @@ export function searchParamHiddenFields(
     fields.push(<input key="cursor" type="hidden" name="cursor" value={params.cursor} />)
   }
 
+  if (params.seek === 'end' && !omit.seek) {
+    fields.push(<input key="seek" type="hidden" name="seek" value="end" />)
+  }
+
   if (params.page > 1 && !omit.page) {
     fields.push(<input key="page" type="hidden" name="page" value={String(params.page)} />)
   }

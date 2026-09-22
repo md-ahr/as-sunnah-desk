@@ -37,16 +37,14 @@ describe('FilterBar', () => {
 
     render(
       <DashboardNavigationProvider>
-        <FilterBar
-          params={params}
-          categories={categories}
-          assignees={assignees}
-          facets={facets}
-        />
+        <FilterBar params={params} categories={categories} assignees={assignees} facets={facets} />
       </DashboardNavigationProvider>,
     )
 
-    expect(screen.getAllByRole('button', { name: 'Filters' }).length).toBeGreaterThan(0)
+    expect(screen.getByRole('button', { name: 'Status filter, 1 selected' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Category filter, 1 selected' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Priority filter' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Assignee filter' })).toBeInTheDocument()
     expect(screen.getByText('New')).toBeInTheDocument()
     expect(screen.getByText('IT Support')).toBeInTheDocument()
   })
@@ -56,12 +54,7 @@ describe('FilterBar', () => {
 
     const { container } = render(
       <DashboardNavigationProvider>
-        <FilterBar
-          params={params}
-          categories={categories}
-          assignees={assignees}
-          facets={facets}
-        />
+        <FilterBar params={params} categories={categories} assignees={assignees} facets={facets} />
       </DashboardNavigationProvider>,
     )
 

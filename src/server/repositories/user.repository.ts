@@ -5,14 +5,12 @@ import { and, eq } from 'drizzle-orm'
 import type { Db } from '@/server/db/client'
 import { getDb } from '@/server/db/client'
 import { users } from '@/server/db/schema'
-import type { UserRole } from '@/server/db/schema'
 
 export type UserAuthDto = {
   readonly id: string
   readonly email: string
   readonly passwordHash: string
   readonly name: string
-  readonly role: UserRole
   readonly isActive: boolean
 }
 
@@ -20,7 +18,6 @@ export type UserPublicDto = {
   readonly id: string
   readonly email: string
   readonly name: string
-  readonly role: UserRole
   readonly isActive: boolean
 }
 
@@ -28,7 +25,6 @@ export type ActiveUserDto = {
   readonly id: string
   readonly email: string
   readonly name: string
-  readonly role: UserRole
 }
 
 export async function findUserById(id: string, db: Db = getDb()): Promise<UserAuthDto | null> {
@@ -38,7 +34,6 @@ export async function findUserById(id: string, db: Db = getDb()): Promise<UserAu
       email: users.email,
       passwordHash: users.passwordHash,
       name: users.name,
-      role: users.role,
       isActive: users.isActive,
     })
     .from(users)
@@ -58,7 +53,6 @@ export async function findUserByEmail(
       email: users.email,
       passwordHash: users.passwordHash,
       name: users.name,
-      role: users.role,
       isActive: users.isActive,
     })
     .from(users)
@@ -77,7 +71,6 @@ export async function findActiveUserById(
       id: users.id,
       email: users.email,
       name: users.name,
-      role: users.role,
     })
     .from(users)
     .where(and(eq(users.id, id), eq(users.isActive, true)))
@@ -95,7 +88,6 @@ export async function findPublicUserById(
       id: users.id,
       email: users.email,
       name: users.name,
-      role: users.role,
       isActive: users.isActive,
     })
     .from(users)

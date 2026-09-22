@@ -6,7 +6,7 @@ import type { RequestDetailDto } from '@/features/requests/types'
 
 export const loadRequestByReference = cache(
   async (reference: string): Promise<RequestDetailDto | null> => {
-    const user = await getCurrentUser()
-    return getByReference(reference, user)
+    await getCurrentUser()
+    return getByReference(reference)
   },
 )

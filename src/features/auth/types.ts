@@ -5,5 +5,4 @@ export type SessionUser = {
   readonly id: string
   readonly name: string
   readonly email: string
-  readonly role: 'admin' | 'manager' | 'agent' | 'viewer'
 }

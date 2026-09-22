@@ -14,23 +14,18 @@ export type RequestColumn = {
   readonly id: RequestColumnId
   readonly label: string
   readonly sortKey?: SortKey
-  readonly mobileHidden?: boolean
 }
 
 export const REQUEST_COLUMNS: readonly RequestColumn[] = [
   { id: 'reference', label: 'ID' },
   { id: 'subject', label: 'Subject' },
-  { id: 'requester', label: 'Requester', mobileHidden: true },
-  { id: 'category', label: 'Category', mobileHidden: true },
+  { id: 'requester', label: 'Requester' },
+  { id: 'category', label: 'Category' },
   { id: 'priority', label: 'Priority', sortKey: 'priority_desc' },
   { id: 'status', label: 'Status' },
-  { id: 'assignee', label: 'Assignee', mobileHidden: true },
+  { id: 'assignee', label: 'Assignee' },
   { id: 'updatedAt', label: 'Last updated', sortKey: 'updated_desc' },
 ]
-
-export function columnMobileHiddenProps(column: RequestColumn): { 'data-mobile-hidden'?: true } {
-  return column.mobileHidden ? { 'data-mobile-hidden': true } : {}
-}
 
 export function ariaSortForColumn(
   column: RequestColumn,

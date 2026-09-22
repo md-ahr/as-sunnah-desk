@@ -66,13 +66,13 @@ graph TD
 
 Dependencies point one way: **inward and downward, never back out.**
 
-| Layer | May import from | Must never import from |
-|---|---|---|
-| `app/` | `features/`, `components/ui/`, `lib/` | `server/repositories`, `server/db` |
-| `features/` | `server/services`, `components/ui/`, `lib/` | `app/`, `server/repositories`, `server/db` |
-| `server/services` | `server/auth`, `server/repositories`, `lib/` | `app/`, `features/`, anything React |
-| `server/repositories` | `server/db`, `lib/` | `app/`, `features/`, `server/services` |
-| `lib/` | nothing (pure) | everything |
+| Layer                 | May import from                              | Must never import from                     |
+| --------------------- | -------------------------------------------- | ------------------------------------------ |
+| `app/`                | `features/`, `components/ui/`, `lib/`        | `server/repositories`, `server/db`         |
+| `features/`           | `server/services`, `components/ui/`, `lib/`  | `app/`, `server/repositories`, `server/db` |
+| `server/services`     | `server/auth`, `server/repositories`, `lib/` | `app/`, `features/`, anything React        |
+| `server/repositories` | `server/db`, `lib/`                          | `app/`, `features/`, `server/services`     |
+| `lib/`                | nothing (pure)                               | everything                                 |
 
 Two consequences worth naming. Routes cannot reach the database directly, so a query cannot be written inline in a page and escape the authorization check. And `lib/` importing nothing is what makes the activity-summary utility trivially unit-testable — it has no framework, no I/O, and no mocks.
 
@@ -149,13 +149,11 @@ as-sunnah-desk/
 │  │  │  └─ reference.repository.ts
 │  │  ├─ services/
 │  │  │  ├─ request.service.ts
-│  │  │  ├─ request-permissions.service.ts
 │  │  │  └─ idempotency.ts
 │  │  ├─ auth/
 │  │  │  ├─ session.ts            # iron-session seal/unseal
 │  │  │  ├─ dal.ts                # getCurrentUser, requireUser
 │  │  │  ├─ password.ts           # argon2
-│  │  │  ├─ permissions.ts        # role capability map
 │  │  │  └─ rate-limit.ts
 │  │  ├─ cache/tags.ts            # centralised cacheTag names
 │  │  ├─ errors/app-error.ts
@@ -270,19 +268,19 @@ Each guard answers a different failure. `disabled` handles the impatient double-
 
 Placement is deliberate, and the default is server.
 
-| Component | Environment | Why |
-|---|---|---|
-| `requests/page.tsx` | Server | Reads `searchParams`, orchestrates |
-| `request-table.tsx` | Server | Pure rendering of a fetched page |
-| `request-row.tsx` | Server | No interactivity of its own |
-| `activity-timeline.tsx` | Server | Read-only history |
-| `filter-bar.tsx` | **Client** | Controlled filter inputs; commits to URL immediately |
-| `search-input.tsx` | **Client** | `useDebouncedCallback` (300 ms) + `useTransition` |
-| `status-control.tsx` | **Client** | `useOptimistic`, `useTransition` |
-| `assignee-control.tsx` | **Client** | Combobox, virtualised list |
-| `pagination.tsx` | Server | `<Link>` only; needs no JS |
-| `login-form.tsx` | **Client** | `useActionState` for field errors |
-| `<Toaster />` | **Client** | Imperative notification host |
+| Component               | Environment | Why                                                  |
+| ----------------------- | ----------- | ---------------------------------------------------- |
+| `requests/page.tsx`     | Server      | Reads `searchParams`, orchestrates                   |
+| `request-table.tsx`     | Server      | Pure rendering of a fetched page                     |
+| `request-row.tsx`       | Server      | No interactivity of its own                          |
+| `activity-timeline.tsx` | Server      | Read-only history                                    |
+| `filter-bar.tsx`        | **Client**  | Controlled filter inputs; commits to URL immediately |
+| `search-input.tsx`      | **Client**  | `useDebouncedCallback` (300 ms) + `useTransition`    |
+| `status-control.tsx`    | **Client**  | `useOptimistic`, `useTransition`                     |
+| `assignee-control.tsx`  | **Client**  | Combobox, virtualised list                           |
+| `pagination.tsx`        | Server      | `<Link>` only; needs no JS                           |
+| `login-form.tsx`        | **Client**  | `useActionState` for field errors                    |
+| `<Toaster />`           | **Client**  | Imperative notification host                         |
 
 The rule applied throughout: `'use client'` marks a **boundary**, not a component. Everything a client file imports joins the client bundle, so the directive goes on the smallest leaf that needs it. Pagination is the clearest illustration — it is navigation, so it is anchors, so it costs nothing and works with JavaScript disabled.
 
@@ -297,8 +295,7 @@ Three distinct mechanisms, because they answer three distinct questions.
 ```ts
 // lib/result.ts
 export type Result<T, E = AppError> =
-  | { readonly ok: true; readonly data: T }
-  | { readonly ok: false; readonly error: E }
+  { readonly ok: true; readonly data: T } | { readonly ok: false; readonly error: E }
 ```
 
 This follows the Next.js guidance that expected errors should be returned rather than thrown, and it makes the failure modes visible in the type signature. A caller cannot forget to handle a conflict, because the type will not let them reach `data` without narrowing.
@@ -307,20 +304,20 @@ This follows the Next.js guidance that expected errors should be returned rather
 
 **3. Framework interrupts use framework functions.** A missing request calls `notFound()`. An unauthenticated user gets `redirect('/login')` from the DAL. These throw control-flow signals and must not be wrapped in `try/catch`.
 
-One consequence of Partial Prerendering worth stating explicitly, because it is a real constraint rather than a detail: once the static shell has started streaming, the HTTP status is already 200 and cannot be changed. So `notFound()` inside a Suspense boundary renders the not-found *UI* but the response is still 200. When a genuine 404 status code matters — for crawlers, or for an API consumer — the check has to happen in `proxy.ts` before streaming begins. This design accepts 200-with-not-found-UI for the request detail page (it is behind authentication and not crawlable) and documents the trade-off rather than pretending it does not exist.
+One consequence of Partial Prerendering worth stating explicitly, because it is a real constraint rather than a detail: once the static shell has started streaming, the HTTP status is already 200 and cannot be changed. So `notFound()` inside a Suspense boundary renders the not-found _UI_ but the response is still 200. When a genuine 404 status code matters — for crawlers, or for an API consumer — the check has to happen in `proxy.ts` before streaming begins. This design accepts 200-with-not-found-UI for the request detail page (it is behind authentication and not crawlable) and documents the trade-off rather than pretending it does not exist.
 
 ## Naming conventions
 
-| Kind | Convention | Example |
-|---|---|---|
-| Files | `kebab-case` | `request-table.tsx` |
-| Repository / service files | `*.repository.ts`, `*.service.ts` | `request.repository.ts` |
-| Components, types | `PascalCase` | `RequestTable`, `RequestListItem` |
-| Functions, variables | `camelCase` | `listRequests` |
-| Zod schemas | `*Schema` with inferred type | `updateStatusSchema` → `UpdateStatusInput` |
-| Server Actions | imperative verb | `updateStatus`, `login` |
-| Repository reads | `find*` returns nullable, `list*` returns a page | `findByReference`, `findById`, `listPaged` |
-| Cache tags | `entity:id` via `server/cache/tags.ts` | `request:142` |
-| Booleans | `is` / `has` / `can` prefix | `canAssign` |
+| Kind                       | Convention                                       | Example                                    |
+| -------------------------- | ------------------------------------------------ | ------------------------------------------ |
+| Files                      | `kebab-case`                                     | `request-table.tsx`                        |
+| Repository / service files | `*.repository.ts`, `*.service.ts`                | `request.repository.ts`                    |
+| Components, types          | `PascalCase`                                     | `RequestTable`, `RequestListItem`          |
+| Functions, variables       | `camelCase`                                      | `listRequests`                             |
+| Zod schemas                | `*Schema` with inferred type                     | `updateStatusSchema` → `UpdateStatusInput` |
+| Server Actions             | imperative verb                                  | `updateStatus`, `login`                    |
+| Repository reads           | `find*` returns nullable, `list*` returns a page | `findByReference`, `findById`, `listPaged` |
+| Cache tags                 | `entity:id` via `server/cache/tags.ts`           | `request:142`                              |
+| Booleans                   | `is` / `has` / `can` prefix                      | `canAssign`                                |
 
 Cache tags are centralised in one module rather than written as string literals at call sites. A typo in a tag name is invisible at runtime — the write succeeds and the cache is simply never invalidated — which makes it exactly the kind of bug worth designing out.

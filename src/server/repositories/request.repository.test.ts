@@ -6,6 +6,7 @@ import { serviceRequests } from '@/server/db/schema'
 import {
   explainListQueryPlan,
   getByReference,
+  listFromEnd,
   listPaged,
 } from '@/server/repositories/request.repository'
 import type { RequestFilters } from '@/server/repositories/request.repository'
@@ -41,13 +42,11 @@ describe('request.repository integration', () => {
       id: 'user_viewer',
       email: 'viewer@assunnah.test',
       name: 'Viewer User',
-      role: 'viewer',
     })
     await insertUser(ctx.db, {
       id: 'user_agent',
       email: 'agent@assunnah.test',
       name: 'Agent User',
-      role: 'agent',
     })
     await insertSeedCategories(ctx.db)
   })
@@ -99,6 +98,40 @@ describe('request.repository integration', () => {
     expect(pageCount).toBe(480)
   })
 
+  it('reads the last page with a reverse keyset seek', async () => {
+    await insertRequests(ctx.db, 55, { requesterId: 'user_viewer' })
+
+    const walked: string[][] = []
+    let cursor: string | null = null
+
+    do {
+      const page = await listPaged(ctx.db, defaultFilters, cursor, 10)
+      walked.push(page.items.map((row) => row.id))
+      cursor = page.nextCursor
+    } while (cursor)
+
+    const end = await listFromEnd(ctx.db, defaultFilters, 10, 55)
+
+    expect(end.items.map((row) => row.id)).toEqual(walked.at(-1))
+    expect(end.hasNextPage).toBe(false)
+    expect(end.hasPreviousPage).toBe(true)
+
+    const previous = await listPaged(ctx.db, defaultFilters, end.previousCursor, 10)
+    expect(previous.items.map((row) => row.id)).toEqual(walked.at(-2))
+  })
+
+  it('returns the previous page when walking a backward cursor', async () => {
+    await insertRequests(ctx.db, 30, { requesterId: 'user_viewer' })
+
+    const firstPage = await listPaged(ctx.db, defaultFilters, null, 10)
+    const secondPage = await listPaged(ctx.db, defaultFilters, firstPage.nextCursor, 10)
+    const back = await listPaged(ctx.db, defaultFilters, secondPage.previousCursor, 10)
+
+    expect(back.items.map((row) => row.id)).toEqual(firstPage.items.map((row) => row.id))
+    expect(back.hasPreviousPage).toBe(false)
+    expect(secondPage.hasPreviousPage).toBe(true)
+  })
+
   it('avoids duplicate rows when a newer record is inserted mid-pagination', async () => {
     await insertRequests(ctx.db, 200, { requesterId: 'user_viewer' })
 
@@ -126,6 +159,14 @@ describe('request.repository integration', () => {
     }
 
     expect(seen.size).toBe(200)
+  })
+
+  it('uses an index-backed plan when seeking the last page in reverse', async () => {
+    await insertRequests(ctx.db, 500, { requesterId: 'user_viewer' })
+
+    const plan = await explainListQueryPlan(ctx.db, defaultFilters, 'prev')
+
+    assertIndexBackedPlan(plan)
   })
 
   it('uses an index-backed plan for the default list query', async () => {

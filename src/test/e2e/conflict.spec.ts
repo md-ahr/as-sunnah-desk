@@ -23,7 +23,9 @@ test.describe('update conflict', () => {
     await pageB.getByTestId('status-badge').click()
     await pageB.getByRole('menuitem', { name: 'Rejected' }).click()
 
-    await expect(pageB.getByText('This request was changed by someone else. It is now In review.')).toBeVisible()
+    await expect(
+      pageB.getByText('This request was changed by someone else. It is now In review.'),
+    ).toBeVisible()
     await expect(pageB.getByRole('button', { name: 'Reload' })).toBeVisible()
 
     await contextA.close()

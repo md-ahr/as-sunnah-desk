@@ -26,7 +26,9 @@ export function DashboardNavigationProvider({ children }: { children: ReactNode 
   )
 
   return (
-    <DashboardNavigationContext.Provider value={value}>{children}</DashboardNavigationContext.Provider>
+    <DashboardNavigationContext.Provider value={value}>
+      {children}
+    </DashboardNavigationContext.Provider>
   )
 }
 

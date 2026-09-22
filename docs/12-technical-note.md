@@ -1,6 +1,6 @@
 # 12 · Technical Note
 
-> This is the brief's requested *"brief technical note explaining major decisions: Server vs Client Components, state/data-fetching approach, performance considerations and application structure."* It is written to stand alone. The other documents in this folder are the supporting detail.
+> This is the brief's requested _"brief technical note explaining major decisions: Server vs Client Components, state/data-fetching approach, performance considerations and application structure."_ It is written to stand alone. The other documents in this folder are the supporting detail.
 
 ## Context
 
@@ -12,15 +12,15 @@ One note on the framework version, because it shaped the implementation more tha
 
 **The default is server. `'use client'` is applied to the smallest leaf that genuinely needs it.**
 
-`'use client'` marks a module *boundary*, not a component: everything a client file imports joins the client bundle. So the directive sits on individual controls rather than on containers.
+`'use client'` marks a module _boundary_, not a component: everything a client file imports joins the client bundle. So the directive sits on individual controls rather than on containers.
 
-| Server Components | Client Components |
-|---|---|
-| Pages and layouts | Filter bar (`SearchInput` debounces via `useDebouncedCallback`; other filters commit immediately) |
-| The request table and its rows | Status and assignee controls |
-| The activity timeline | Login form |
-| Pagination (anchors — needs no JS) | Toast host |
-| Empty states, skeletons | — |
+| Server Components                  | Client Components                                                                                 |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------- |
+| Pages and layouts                  | Filter bar (`SearchInput` debounces via `useDebouncedCallback`; other filters commit immediately) |
+| The request table and its rows     | Status and assignee controls                                                                      |
+| The activity timeline              | Login form                                                                                        |
+| Pagination (anchors — needs no JS) | Toast host                                                                                        |
+| Empty states, skeletons            | —                                                                                                 |
 
 The row status control is the illustrative case. Each row is a Server Component, and only the status dropdown inside it is a client island. At `perPage=100` that is 100 small islands over server-rendered markup — linear in page size, but far smaller than hydrating an entire client-rendered table.
 
@@ -38,15 +38,15 @@ No SWR, no TanStack Query, no Redux, no Zustand. That absence is the design, not
 
 State is partitioned so that each kind lives in exactly one place:
 
-| State | Lives in | Why |
-|---|---|---|
-| Request data | Database | The source of truth, never mirrored client-side |
-| Search, filters, sort, pagination | **The URL** | Shareable, bookmarkable, back-button-correct, server-readable |
-| Current user | Server session, shared via context | Derived from the request |
-| Search input text | Local component state | Transient; the URL updates on a 300 ms debounce |
-| Optimistic status | `useOptimistic` | Transient by definition; reverts automatically |
+| State                             | Lives in                           | Why                                                           |
+| --------------------------------- | ---------------------------------- | ------------------------------------------------------------- |
+| Request data                      | Database                           | The source of truth, never mirrored client-side               |
+| Search, filters, sort, pagination | **The URL**                        | Shareable, bookmarkable, back-button-correct, server-readable |
+| Current user                      | Server session, shared via context | Derived from the request                                      |
+| Search input text                 | Local component state              | Transient; the URL updates on a 300 ms debounce               |
+| Optimistic status                 | `useOptimistic`                    | Transient by definition; reverts automatically                |
 
-**The URL as the single source of truth for filter state** is the decision with the widest effect. One Zod schema defines the contract; the server parses it to build the query, and the client parses it to render the controls. Direct URL access and refresh work with no rehydration, because there is no client state to rehydrate. Every view is shareable. The back button works because history *is* the state history. A malformed URL falls back to defaults rather than throwing, so a truncated link does not break the dashboard.
+**The URL as the single source of truth for filter state** is the decision with the widest effect. One Zod schema defines the contract; the server parses it to build the query, and the client parses it to render the controls. Direct URL access and refresh work with no rehydration, because there is no client state to rehydrate. Every view is shareable. The back button works because history _is_ the state history. A malformed URL falls back to defaults rather than throwing, so a truncated link does not break the dashboard.
 
 Mutations use Server Actions with a consistent four-step preamble — validate with Zod, authenticate against the session, authorize the capability, then execute. Expected failures are **returned** as a typed `Result` rather than thrown, following the framework's own guidance, so every failure mode the UI must handle is visible in the type signature.
 
@@ -54,14 +54,14 @@ Mutations use Server Actions with a consistent four-step preamble — validate w
 
 This is where the brief's language is most demanding, so it is worth being specific. "Prevent duplicate actions" is four distinct problems, and a disabled button solves only the first:
 
-| Failure | Mechanism |
-|---|---|
-| Impatient double-click | Control `disabled` while the transition is pending |
-| Duplicate network delivery or retry | Client-generated idempotency key with a unique database constraint |
-| Two users editing the same request | Optimistic concurrency: `UPDATE ... WHERE id = ? AND version = ?`. Zero rows means conflict |
-| Invalid transition (`closed → in_progress`) | An explicit status state machine, which also drives the UI's options |
+| Failure                                     | Mechanism                                                                                   |
+| ------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| Impatient double-click                      | Control `disabled` while the transition is pending                                          |
+| Duplicate network delivery or retry         | Client-generated idempotency key with a unique database constraint                          |
+| Two users editing the same request          | Optimistic concurrency: `UPDATE ... WHERE id = ? AND version = ?`. Zero rows means conflict |
+| Invalid transition (`closed → in_progress`) | An explicit status state machine, which also drives the UI's options                        |
 
-Rollback needs almost no code: `useOptimistic` applies the change immediately, and React discards it when the transition ends, so a failed action returns the UI to the server value automatically. What *is* written is the recovery path — a conflict reports the current server value and offers a reload, because "someone else changed this" is useless without a way forward.
+Rollback needs almost no code: `useOptimistic` applies the change immediately, and React discards it when the transition ends, so a failed action returns the UI to the server value automatically. What _is_ written is the recovery path — a conflict reports the current server value and offers a reload, because "someone else changed this" is useless without a way forward.
 
 After a successful write, `updateTag()` expires the affected cache entries immediately. This is read-your-writes semantics, new in Next.js 16, and the right choice here: `revalidateTag` would serve stale content while refreshing in the background, which is fine for a blog and wrong for a work queue where someone just changed a status and needs to trust what they see.
 
@@ -71,7 +71,7 @@ The target was to make the cost of a page view independent of the table size.
 
 **Server-side everything.** Filtering, sorting and pagination happen in SQL. The client receives one page of rows (10–100 per URL `perPage`) regardless of whether the table holds 12,000 or 12 million.
 
-**Keyset pagination rather than offset.** `LIMIT 25 OFFSET 9800` makes the database produce and discard 9,800 rows, so the last page is the slowest — backwards from what users expect. A cursor comparing the indexed `(updated_at, id)` tuple is O(log n) at any depth, and it is immune to the row-shifting that causes offset pagination to duplicate or skip records during concurrent inserts. The trade-off is that keyset gives next/previous rather than "jump to page 47", so bounded page numbers are offered for the first 20 pages where offset is still cheap.
+**Keyset pagination rather than offset.** `LIMIT 25 OFFSET 9800` makes the database produce and discard 9,800 rows, so the last page is the slowest — backwards from what users expect. A cursor comparing the indexed `(updated_at, id)` tuple is O(log n) at any depth, and it is immune to the row-shifting that causes offset pagination to duplicate or skip records during concurrent inserts. The numbered pager still cannot jump to an arbitrary middle page. Pages 1–20 use a bounded offset, the neighbouring page uses the cursor, and the last page is a reverse index seek rather than an offset to the end.
 
 **Indexes matched to queries, and asserted.** Composite indexes cover each filter-plus-sort combination, every sort index ends in `id` so the keyset comparison is a pure index seek, and search uses an FTS5 inverted index rather than `LIKE '%term%'`, which cannot use an index at all. A test asserts that `EXPLAIN QUERY PLAN` for the list query contains no table scan — a performance claim that is not asserted will regress.
 
@@ -116,11 +116,11 @@ A design with no trade-offs is a design that has not been thought about. The fou
 
 ## Where this breaks
 
-| Scale | Status |
-|---|---|
-| 10k–100k requests | Works as designed |
-| ~1M | Works; counts get coarser, some filter combinations want covering indexes |
-| 10M+ | Swap SQLite for PostgreSQL. Only the database client and the FTS implementation change; repository signatures do not |
+| Scale                  | Status                                                                                                                       |
+| ---------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| 10k–100k requests      | Works as designed                                                                                                            |
+| ~1M                    | Works; counts get coarser, some filter combinations want covering indexes                                                    |
+| 10M+                   | Swap SQLite for PostgreSQL. Only the database client and the FTS implementation change; repository signatures do not         |
 | High write concurrency | SQLite serialises writes. Not a constraint for single-record updates in a read-heavy portal; it would be for bulk operations |
 
 The repository interface is the seam that keeps the PostgreSQL migration contained, and it is the main reason services never talk to the ORM directly.

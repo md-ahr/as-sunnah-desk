@@ -1,5 +1,6 @@
 import { z } from 'zod'
 
+import { OFFSET_PAGE_LIMIT } from '@/lib/pagination/constants'
 import { DEFAULT_SORT, isSortKey } from '@/lib/search-params/cursor'
 import { CATEGORY_SLUGS, isCategorySlug } from '@/lib/search-params/categories'
 import { REQUEST_PRIORITIES, REQUEST_STATUSES } from '@/lib/search-params/request-enums'
@@ -10,9 +11,12 @@ export const searchParamsSchema = z.object({
   priority: z.array(z.enum(REQUEST_PRIORITIES)).default([]),
   category: z.array(z.enum(CATEGORY_SLUGS)).default([]),
   assignee: z.array(z.union([z.string().min(1), z.literal('unassigned')])).default([]),
-  sort: z.enum(['updated_desc', 'updated_asc', 'created_desc', 'priority_desc']).default(DEFAULT_SORT),
+  sort: z
+    .enum(['updated_desc', 'updated_asc', 'created_desc', 'priority_desc', 'priority_asc'])
+    .default(DEFAULT_SORT),
   cursor: z.string().optional(),
-  page: z.coerce.number().int().min(1).max(20).catch(1).default(1),
+  seek: z.enum(['end']).optional(),
+  page: z.coerce.number().int().min(1).catch(1).default(1),
   perPage: z.coerce
     .number()
     .int()
@@ -70,6 +74,7 @@ function normaliseSearchParams(input: URLSearchParams | RawSearchParams): RawSea
   const assignee = normaliseAssignee(toArray(raw.assignee))
 
   const sortValue = typeof raw.sort === 'string' && isSortKey(raw.sort) ? raw.sort : DEFAULT_SORT
+  const seek = raw.seek === 'end' ? 'end' : undefined
 
   return {
     ...raw,
@@ -78,22 +83,33 @@ function normaliseSearchParams(input: URLSearchParams | RawSearchParams): RawSea
     category: category.length > 0 ? category : undefined,
     assignee: assignee.length > 0 ? assignee : undefined,
     sort: sortValue,
+    seek,
   }
 }
 
 /** Never throws. Malformed URLs fall back to defaults. */
 export function parseSearchParams(input: URLSearchParams | RawSearchParams): SearchParams {
   const result = searchParamsSchema.safeParse(normaliseSearchParams(input))
-  return result.success ? result.data : searchParamsSchema.parse({})
+  const params = result.success ? result.data : searchParamsSchema.parse({})
+
+  if (params.seek === 'end') {
+    return { ...params, cursor: undefined }
+  }
+
+  if (params.page > OFFSET_PAGE_LIMIT && !params.cursor) {
+    return { ...params, page: 1 }
+  }
+
+  return params
 }
 
 export function hasActiveFilters(params: SearchParams): boolean {
   return Boolean(
     params.q ||
-      params.status.length > 0 ||
-      params.priority.length > 0 ||
-      params.category.length > 0 ||
-      params.assignee.length > 0,
+    params.status.length > 0 ||
+    params.priority.length > 0 ||
+    params.category.length > 0 ||
+    params.assignee.length > 0,
   )
 }
 
@@ -128,6 +144,10 @@ export function serialiseSearchParams(params: Partial<SearchParams>): string {
     search.set('cursor', params.cursor)
   }
 
+  if (params.seek === 'end') {
+    search.set('seek', 'end')
+  }
+
   if (params.page && params.page > 1) {
     search.set('page', String(params.page))
   }
@@ -154,7 +174,7 @@ export function withSearchParams(
     patch.sort !== undefined ||
     patch.perPage !== undefined
   ) {
-    return { ...next, cursor: undefined, page: 1 }
+    return { ...next, cursor: undefined, seek: undefined, page: 1 }
   }
 
   return next

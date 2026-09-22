@@ -26,11 +26,24 @@ export function SortLink({ sortKey, currentSort, params, children, className }: 
     withSearchParams(params, { sort: nextSort(currentSort, sortKey) }),
   )}`
 
+  const isDesc = currentSort === sortKey
+  const isAsc = currentSort === sortKey.replace('_desc', '_asc')
+
   return (
-    <Link href={toRoute(href)} className={cn('inline-flex items-center gap-1 hover:underline', className)}>
+    <Link
+      href={toRoute(href)}
+      className={cn('inline-flex items-center gap-1 hover:underline', className)}
+    >
       {children}
-      {currentSort === sortKey && <span aria-hidden="true">↓</span>}
-      {currentSort === sortKey.replace('_desc', '_asc') && <span aria-hidden="true">↑</span>}
+      {isDesc ? (
+        <span aria-hidden="true">↓</span>
+      ) : isAsc ? (
+        <span aria-hidden="true">↑</span>
+      ) : (
+        <span aria-hidden="true" className="text-muted-foreground/70">
+          ↕
+        </span>
+      )}
     </Link>
   )
 }

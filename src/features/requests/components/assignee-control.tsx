@@ -31,6 +31,7 @@ type AssigneeControlProps = {
   canEdit: boolean
   options: readonly AssigneeOption[]
   disabledReason?: string
+  showTrigger?: boolean
 }
 
 export function AssigneeControl({
@@ -40,6 +41,7 @@ export function AssigneeControl({
   canEdit,
   options,
   disabledReason = 'You do not have permission to change the assignee.',
+  showTrigger = false,
 }: AssigneeControlProps) {
   const [optimisticAssignee, setOptimisticAssignee] = useOptimistic(assignee)
   const { getVersion, setVersion } = useMutationVersion(requestId, version)
@@ -77,9 +79,7 @@ export function AssigneeControl({
     }
 
     const idempotencyKey =
-      inFlightRef.current?.target === nextAssigneeId
-        ? inFlightRef.current.key
-        : crypto.randomUUID()
+      inFlightRef.current?.target === nextAssigneeId ? inFlightRef.current.key : crypto.randomUUID()
     inFlightRef.current = { key: idempotencyKey, target: nextAssigneeId }
     inFlightCountRef.current += 1
 
@@ -98,7 +98,12 @@ export function AssigneeControl({
           toast.error(messageFor(result.error), {
             action:
               result.error.code === 'CONFLICT'
-                ? { label: 'Reload', onClick: () => { window.location.reload() } }
+                ? {
+                    label: 'Reload',
+                    onClick: () => {
+                      window.location.reload()
+                    },
+                  }
                 : undefined,
           })
           return
@@ -133,14 +138,14 @@ export function AssigneeControl({
   }
 
   return (
-    <div ref={anchorRef} className="max-w-xs">
+    <div ref={anchorRef} className="w-full max-w-xs">
       <Combobox value={selectedValue} onValueChange={onValueChange} disabled={isPending}>
         <ComboboxInput
           aria-label="Assignee"
           placeholder={selectedLabel}
-          showTrigger={false}
+          showTrigger={showTrigger}
           showClear={false}
-          className="w-full"
+          className="bg-background w-full"
         />
         <ComboboxContent anchor={anchorRef}>
           <AssigneeOptionsList

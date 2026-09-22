@@ -6,12 +6,12 @@ The brief asks for updates with "immediate user feedback, prevent duplicate acti
 
 It is tempting to treat "prevent duplicate actions" as one problem solved by disabling a button. It is actually four problems, and a disabled button solves only the first.
 
-| # | Failure | Scenario | Mechanism | Layer |
-|---|---|---|---|---|
-| 1 | Impatient double-click | User clicks twice in 200 ms | `disabled` while `pending` | Client |
-| 2 | Duplicate delivery | Retry after timeout; action delivered twice | Idempotency key with a unique constraint | Server |
-| 3 | Lost update | Two users change the same request | Optimistic concurrency on `version` | Database |
-| 4 | Invalid transition | `closed → in_progress` | Status state machine | Service |
+| #   | Failure                | Scenario                                    | Mechanism                                | Layer    |
+| --- | ---------------------- | ------------------------------------------- | ---------------------------------------- | -------- |
+| 1   | Impatient double-click | User clicks twice in 200 ms                 | `disabled` while `pending`               | Client   |
+| 2   | Duplicate delivery     | Retry after timeout; action delivered twice | Idempotency key with a unique constraint | Server   |
+| 3   | Lost update            | Two users change the same request           | Optimistic concurrency on `version`      | Database |
+| 4   | Invalid transition     | `closed → in_progress`                      | Status state machine                     | Service  |
 
 A disabled button does nothing about 2, 3 or 4. Number 3 in particular is the one that quietly corrupts data in real systems, and no amount of client-side care can address it.
 
@@ -78,7 +78,7 @@ export function StatusControl({ requestId, status, version, canEdit }: Props) {
 
   function onSelect(next: RequestStatus) {
     startTransition(async () => {
-      setOptimisticStatus(next)              // immediate; reverts if the action fails
+      setOptimisticStatus(next) // immediate; reverts if the action fails
 
       const result = await updateStatus({
         id: requestId,
@@ -90,9 +90,10 @@ export function StatusControl({ requestId, status, version, canEdit }: Props) {
       if (!result.ok) {
         // No manual rollback: leaving the transition restores the server value.
         toast.error(messageFor(result.error), {
-          action: result.error.code === 'CONFLICT'
-            ? { label: 'Reload', onClick: () => window.location.reload() }
-            : undefined,
+          action:
+            result.error.code === 'CONFLICT'
+              ? { label: 'Reload', onClick: () => window.location.reload() }
+              : undefined,
         })
         return
       }
@@ -109,8 +110,8 @@ export function StatusControl({ requestId, status, version, canEdit }: Props) {
       <StatusMenu
         aria-labelledby={labelId}
         value={optimisticStatus}
-        options={allowedTransitions(status)}   // only legal transitions are offered
-        disabled={!canEdit || isPending}       // guards failure mode 1
+        options={allowedTransitions(status)} // only legal transitions are offered
+        disabled={!canEdit || isPending} // guards failure mode 1
         onSelect={onSelect}
         busy={isPending}
       />
@@ -129,14 +130,14 @@ Details that matter:
 
 **A conflict gets a recovery action**, not just a message. "Someone else changed this request" is useless without a way forward.
 
-React also reverts the optimistic value if the action *throws* rather than returning an error, and the throw surfaces in the nearest error boundary. Both paths are safe; expected failures use the `Result` path so the user gets a specific message rather than a generic error screen.
+React also reverts the optimistic value if the action _throws_ rather than returning an error, and the throw surfaces in the nearest error boundary. Both paths are safe; expected failures use the `Result` path so the user gets a specific message rather than a generic error screen.
 
 ### Where controls mount
 
-| Control | Dashboard row | Detail page | Rationale |
-|---|---|---|---|
-| `StatusControl` | Yes (`RowStatusControl`) | Yes | Triage from the list is a core workflow; detail page repeats the same control |
-| `AssigneeControl` | No (read-only assignee name/badge) | Yes | Assignee changes need context (description, activity); combobox is too heavy per row at 10–100 rows |
+| Control           | Dashboard row                      | Detail page | Rationale                                                                                           |
+| ----------------- | ---------------------------------- | ----------- | --------------------------------------------------------------------------------------------------- |
+| `StatusControl`   | Yes (`RowStatusControl`)           | Yes         | Triage from the list is a core workflow; detail page repeats the same control                       |
+| `AssigneeControl` | No (read-only assignee name/badge) | Yes         | Assignee changes need context (description, activity); combobox is too heavy per row at 10–100 rows |
 
 Both controls share the same Server Action preamble, idempotency key, and version check. See [14 · UI component plan](./14-ui-component-plan.md#update-workflow-phase-5).
 
@@ -157,7 +158,7 @@ export async function withIdempotency<T>(
     // Already applied. Return the recorded outcome without writing again.
     return ok(await requestRepository.findSummaryById(existing.requestId))
   }
-  return operation()   // INSERT carries the key; a concurrent duplicate hits the constraint
+  return operation() // INSERT carries the key; a concurrent duplicate hits the constraint
 }
 ```
 
@@ -188,7 +189,7 @@ export async function updateStatusIfVersionMatches(
     .where(and(eq(requests.id, id), eq(requests.version, expectedVersion)))
     .returning()
 
-  return rows[0] ?? null      // null means the version moved: conflict
+  return rows[0] ?? null // null means the version moved: conflict
 }
 ```
 
@@ -237,7 +238,7 @@ Every message is specific. "Something went wrong" tells a user nothing; "This re
 
 ```ts
 // after a successful transaction
-updateTag(tags.request(id))              // read-your-writes: next read blocks for fresh data
+updateTag(tags.request(id)) // read-your-writes: next read blocks for fresh data
 updateTag(tags.requestActivity(id))
 revalidateTag(tags.facetCounts(), 'max') // aggregate may lag briefly
 ```
@@ -283,7 +284,7 @@ export function LoginForm({ next }: { next?: string }) {
       />
 
       {state.error && state.error.code !== 'VALIDATION' && (
-        <p role="alert" className="text-sm text-destructive">
+        <p role="alert" className="text-destructive text-sm">
           {messageFor(state.error)}
         </p>
       )}
@@ -300,10 +301,9 @@ With `useActionState`, the action's first parameter becomes the previous state:
 
 ```ts
 'use server'
-export async function login(
-  _prev: LoginState,
-  formData: FormData,
-): Promise<LoginState> { /* ... */ }
+export async function login(_prev: LoginState, formData: FormData): Promise<LoginState> {
+  /* ... */
+}
 ```
 
 `noValidate` disables native browser validation so error presentation is consistent and accessible, with the server as the single source of validation truth. The form still works without JavaScript — a Server Component form posts and re-renders — which is why login is a `<form action>` rather than a click handler.
@@ -324,13 +324,21 @@ export const searchParamsSchema = z.object({
   priority: z.array(z.enum(REQUEST_PRIORITIES)).default([]),
   category: z.array(z.enum(CATEGORY_SLUGS)).default([]), // slug in URL, e.g. it-support — not the FK id
   assignee: z.array(z.union([z.string().min(1), z.literal('unassigned')])).default([]), // user id, e.g. user_admin
-  sort: z.enum(['updated_desc', 'updated_asc', 'created_desc', 'priority_desc']).default('updated_desc'),
+  sort: z
+    .enum(['updated_desc', 'updated_asc', 'created_desc', 'priority_desc'])
+    .default('updated_desc'),
   cursor: z.string().optional(),
-  perPage: z.coerce.number().int().pipe(z.union([z.literal(10), z.literal(25), z.literal(50), z.literal(100)])).default(10),
+  perPage: z.coerce
+    .number()
+    .int()
+    .pipe(z.union([z.literal(10), z.literal(25), z.literal(50), z.literal(100)]))
+    .default(10),
 })
 
 /** Never throws. A malformed URL falls back to defaults rather than breaking the page. */
-export function parseSearchParams(input: URLSearchParams | Record<string, string | string[] | undefined>) {
+export function parseSearchParams(
+  input: URLSearchParams | Record<string, string | string[] | undefined>,
+) {
   const result = searchParamsSchema.safeParse(normalise(input))
   return result.success ? result.data : searchParamsSchema.parse({})
 }
@@ -339,8 +347,18 @@ export function parseSearchParams(input: URLSearchParams | Record<string, string
 ```ts
 // lib/search-params/categories.ts — must match seed.ts (see 15-local-setup.md#seeded-categories)
 export const CATEGORY_SLUGS = [
-  'it-support', 'facilities', 'hr', 'finance', 'procurement', 'events',
-  'communications', 'maintenance', 'security', 'transport', 'legal', 'general',
+  'it-support',
+  'facilities',
+  'hr',
+  'finance',
+  'procurement',
+  'events',
+  'communications',
+  'maintenance',
+  'security',
+  'transport',
+  'legal',
+  'general',
 ] as const
 export type CategorySlug = (typeof CATEGORY_SLUGS)[number]
 ```
@@ -370,7 +388,7 @@ export function SearchInput({ initialQuery }: { initialQuery: string }) {
   const commit = useDebouncedCallback((next: string) => {
     const params = new URLSearchParams(searchParams)
     next ? params.set('q', next) : params.delete('q')
-    params.delete('cursor')                    // a new search invalidates the cursor
+    params.delete('cursor') // a new search invalidates the cursor
     startTransition(() => {
       router.replace(`${pathname}?${params}`, { scroll: false })
     })
@@ -381,12 +399,15 @@ export function SearchInput({ initialQuery }: { initialQuery: string }) {
       <input
         type="search"
         value={value}
-        onChange={(e) => { setValue(e.target.value); commit(e.target.value) }}
+        onChange={(e) => {
+          setValue(e.target.value)
+          commit(e.target.value)
+        }}
         aria-label="Search requests"
         aria-describedby="search-hint"
         className="..."
       />
-      {isPending && <Spinner aria-hidden className="absolute right-2 top-2" />}
+      {isPending && <Spinner aria-hidden className="absolute top-2 right-2" />}
       <p id="search-hint" className="sr-only">
         Searches request reference, subject and description.
       </p>
@@ -410,11 +431,19 @@ export function useDebouncedCallback<T extends (...args: never[]) => void>(
   const fnRef = useRef(fn)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   fnRef.current = fn
-  useEffect(() => () => { if (timerRef.current) clearTimeout(timerRef.current) }, [])
-  return useCallback((...args: Parameters<T>) => {
-    if (timerRef.current) clearTimeout(timerRef.current)
-    timerRef.current = setTimeout(() => fnRef.current(...args), delayMs)
-  }, [delayMs]) as T
+  useEffect(
+    () => () => {
+      if (timerRef.current) clearTimeout(timerRef.current)
+    },
+    [],
+  )
+  return useCallback(
+    (...args: Parameters<T>) => {
+      if (timerRef.current) clearTimeout(timerRef.current)
+      timerRef.current = setTimeout(() => fnRef.current(...args), delayMs)
+    },
+    [delayMs],
+  ) as T
 }
 ```
 
@@ -428,14 +457,14 @@ The pending spinner uses `useTransition`, so the old results stay visible and in
 
 ## Where state lives
 
-| State | Location | Rationale |
-|---|---|---|
-| Service request data | Server (database) | The source of truth; never mirrored on the client |
-| Filter, sort, pagination | **URL** | Shareable, bookmarkable, back-button-correct, server-readable |
-| Current user | Server, via `use cache: private` | Session-derived; shared through context with `use()` |
-| Search input text | Local `useState` | Transient; the URL is updated on debounce |
-| Optimistic status/assignee | `useOptimistic` | Transient by definition; reverts automatically |
-| Menu and dialog open state | Local `useState` in Base UI primitives | Pure UI state with no meaning outside the component |
-| Toasts | `sonner` internal store | Ephemeral notifications |
+| State                      | Location                               | Rationale                                                     |
+| -------------------------- | -------------------------------------- | ------------------------------------------------------------- |
+| Service request data       | Server (database)                      | The source of truth; never mirrored on the client             |
+| Filter, sort, pagination   | **URL**                                | Shareable, bookmarkable, back-button-correct, server-readable |
+| Current user               | Server, via `use cache: private`       | Session-derived; shared through context with `use()`          |
+| Search input text          | Local `useState`                       | Transient; the URL is updated on debounce                     |
+| Optimistic status/assignee | `useOptimistic`                        | Transient by definition; reverts automatically                |
+| Menu and dialog open state | Local `useState` in Base UI primitives | Pure UI state with no meaning outside the component           |
+| Toasts                     | `sonner` internal store                | Ephemeral notifications                                       |
 
 There is no global client store because there is no state left that needs one. That is the outcome of the architecture, not an omission — and it is worth noticing that "which state manager should we use" is a question this design simply never has to answer.

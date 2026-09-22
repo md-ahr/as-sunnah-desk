@@ -6,7 +6,6 @@ import { appError } from '@/lib/app-error'
 import { err, ok } from '@/lib/result'
 import type { Result } from '@/lib/result'
 import { tags } from '@/server/cache/tags'
-import { can } from '@/server/services/request-permissions.service'
 import { updateStatus as updateStatusService } from '@/server/services/request.service'
 import { requireUser } from '@/server/services/session.service'
 
@@ -30,10 +29,6 @@ export async function updateStatus(input: unknown): Promise<Result<RequestUpdate
   const auth = await requireUser()
   if (!auth.ok) {
     return auth
-  }
-
-  if (!can(auth.data, 'request:update:status')) {
-    return err(appError('FORBIDDEN', 'You do not have permission to update this request.'))
   }
 
   const result = await updateStatusService(auth.data, parsed.data)

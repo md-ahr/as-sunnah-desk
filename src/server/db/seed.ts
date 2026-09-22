@@ -6,10 +6,11 @@ import { drizzle } from 'drizzle-orm/libsql'
 
 import { v7 as uuidv7 } from 'uuid'
 import type { AppDb } from '@/server/db/client'
+import '@/server/db/load-env'
 import { env } from '@/server/env'
 import * as schema from '@/server/db/schema'
 import { categories, requestActivities, serviceRequests, users } from '@/server/db/schema'
-import type { ActivityType, RequestPriority, RequestStatus, UserRole } from '@/server/db/schema'
+import type { ActivityType, RequestPriority, RequestStatus } from '@/server/db/schema'
 import type { UserInsert } from '@/server/db/types'
 
 const REQUEST_COUNT = 12_000
@@ -36,35 +37,30 @@ const FIXED_USERS: ReadonlyArray<{
   email: string
   password: string
   name: string
-  role: UserRole
 }> = [
   {
     id: 'user_admin',
     email: 'admin@assunnah.test',
     password: 'test.admin',
     name: 'Admin User',
-    role: 'admin',
   },
   {
     id: 'user_manager',
     email: 'manager@assunnah.test',
     password: 'test.manager',
     name: 'Manager User',
-    role: 'manager',
   },
   {
     id: 'user_agent',
     email: 'agent@assunnah.test',
     password: 'test.agent',
     name: 'Agent User',
-    role: 'agent',
   },
   {
     id: 'user_viewer',
     email: 'viewer@assunnah.test',
     password: 'test.viewer',
     name: 'Viewer User',
-    role: 'viewer',
   },
 ]
 
@@ -155,28 +151,23 @@ async function seedReferenceData(db: Pick<AppDb, 'insert'>): Promise<string[]> {
       email: user.email,
       passwordHash: await hashPassword(user.password),
       name: user.name,
-      role: user.role,
       isActive: true,
       createdAt: now,
     })
 
-    if (user.role !== 'viewer') {
-      assignableUserIds.push(user.id)
-    }
+    assignableUserIds.push(user.id)
   }
 
   const generatedPasswordHash = await hashPassword('generated.password')
 
   for (let index = 0; index < 56; index += 1) {
     const id = `user_gen_${String(index + 1).padStart(2, '0')}`
-    const role = faker.helpers.arrayElement(['agent', 'manager'] as const)
 
     generatedRows.push({
       id,
       email: faker.internet.email().toLowerCase(),
       passwordHash: generatedPasswordHash,
       name: faker.person.fullName(),
-      role,
       isActive: true,
       createdAt: now,
     })
@@ -233,7 +224,11 @@ const MUTATION_FIXTURES: Partial<
   905: { subject: 'Mutation fixture: consecutive status', status: 'new', assigneeId: 'user_agent' },
   906: { subject: 'Mutation fixture: dashboard status', status: 'new', assigneeId: 'user_agent' },
   907: { subject: 'Mutation fixture: assignee keyboard', status: 'new', assigneeId: null },
-  908: { subject: 'Mutation fixture: a11y keyboard journey', status: 'new', assigneeId: 'user_agent' },
+  908: {
+    subject: 'Mutation fixture: a11y keyboard journey',
+    status: 'new',
+    assigneeId: 'user_agent',
+  },
 }
 
 function buildRequests(

@@ -82,10 +82,8 @@ export class P2Quantile {
       const previous = (i - 1) as MarkerIndex
       const next = (i + 1) as MarkerIndex
       const d = readMarker(this.np, index) - readMarker(this.n, index)
-      const canIncrease =
-        d >= 1 && readMarker(this.n, next) - readMarker(this.n, index) > 1
-      const canDecrease =
-        d <= -1 && readMarker(this.n, previous) - readMarker(this.n, index) < -1
+      const canIncrease = d >= 1 && readMarker(this.n, next) - readMarker(this.n, index) > 1
+      const canDecrease = d <= -1 && readMarker(this.n, previous) - readMarker(this.n, index) < -1
       if (!canIncrease && !canDecrease) {
         continue
       }

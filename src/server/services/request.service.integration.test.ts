@@ -24,21 +24,12 @@ const admin: AuthenticatedUser = {
   id: 'user_admin',
   name: 'Admin User',
   email: 'admin@assunnah.test',
-  role: 'admin',
 }
 
 const agent: AuthenticatedUser = {
   id: 'user_agent',
   name: 'Agent User',
   email: 'agent@assunnah.test',
-  role: 'agent',
-}
-
-const viewer: AuthenticatedUser = {
-  id: 'user_viewer',
-  name: 'Viewer User',
-  email: 'viewer@assunnah.test',
-  role: 'viewer',
 }
 
 describe('request.service getByReference', () => {
@@ -53,19 +44,16 @@ describe('request.service getByReference', () => {
       id: 'user_admin',
       email: 'admin@assunnah.test',
       name: 'Admin User',
-      role: 'admin',
     })
     await insertUser(ctx.db, {
       id: 'user_agent',
       email: 'agent@assunnah.test',
       name: 'Agent User',
-      role: 'agent',
     })
     await insertUser(ctx.db, {
       id: 'user_viewer',
       email: 'viewer@assunnah.test',
       name: 'Viewer User',
-      role: 'viewer',
     })
     await insertSeedCategories(ctx.db)
     await insertRequest(ctx.db, {
@@ -94,7 +82,7 @@ describe('request.service getByReference', () => {
   })
 
   it('returns the request for users who can read all records', async () => {
-    const request = await getByReference('SR-2026-000142', admin)
+    const request = await getByReference('SR-2026-000142')
 
     expect(request).toMatchObject({
       reference: 'SR-2026-000142',
@@ -105,15 +93,14 @@ describe('request.service getByReference', () => {
     })
   })
 
-  it('returns an assigned request to the agent who owns it', async () => {
-    const request = await getByReference('SR-2026-000142', agent)
+  it('returns the same request to any signed-in user', async () => {
+    const request = await getByReference('SR-2026-000142')
 
     expect(request?.reference).toBe('SR-2026-000142')
   })
 
-  it('hides out-of-scope and unknown references as not found', async () => {
-    await expect(getByReference('SR-2026-000200', agent)).resolves.toBeNull()
-    await expect(getByReference('SR-2099-999999', viewer)).resolves.toBeNull()
+  it('returns null for an unknown reference', async () => {
+    await expect(getByReference('SR-2099-999999')).resolves.toBeNull()
   })
 })
 
@@ -129,7 +116,6 @@ describe('request.service listRequestActivity', () => {
       id: 'user_viewer',
       email: 'viewer@assunnah.test',
       name: 'Viewer User',
-      role: 'viewer',
     })
     await insertSeedCategories(ctx.db)
     await insertRequest(ctx.db, {
@@ -191,19 +177,16 @@ describe('request.service updateStatus', () => {
       id: 'user_admin',
       email: 'admin@assunnah.test',
       name: 'Admin User',
-      role: 'admin',
     })
     await insertUser(ctx.db, {
       id: 'user_agent',
       email: 'agent@assunnah.test',
       name: 'Agent User',
-      role: 'agent',
     })
     await insertUser(ctx.db, {
       id: 'user_viewer',
       email: 'viewer@assunnah.test',
       name: 'Viewer User',
-      role: 'viewer',
     })
     await insertSeedCategories(ctx.db)
     await insertRequest(ctx.db, {
@@ -223,15 +206,12 @@ describe('request.service updateStatus', () => {
   })
 
   it('updates status, writes activity, and bumps version', async () => {
-    const result: Result<RequestUpdateResult> = await updateStatus(
-      admin,
-      {
-        id: 'req_update',
-        status: 'in_review',
-        version: 1,
-        idempotencyKey: '11111111-1111-4111-8111-111111111111',
-      } satisfies UpdateStatusInput,
-    )
+    const result: Result<RequestUpdateResult> = await updateStatus(admin, {
+      id: 'req_update',
+      status: 'in_review',
+      version: 1,
+      idempotencyKey: '11111111-1111-4111-8111-111111111111',
+    } satisfies UpdateStatusInput)
 
     expect(result.ok).toBe(true)
     if (result.ok) {
@@ -243,15 +223,12 @@ describe('request.service updateStatus', () => {
   })
 
   it('rejects invalid transitions', async () => {
-    const result: Result<RequestUpdateResult> = await updateStatus(
-      admin,
-      {
-        id: 'req_update',
-        status: 'resolved',
-        version: 1,
-        idempotencyKey: '22222222-2222-4222-8222-222222222222',
-      } satisfies UpdateStatusInput,
-    )
+    const result: Result<RequestUpdateResult> = await updateStatus(admin, {
+      id: 'req_update',
+      status: 'resolved',
+      version: 1,
+      idempotencyKey: '22222222-2222-4222-8222-222222222222',
+    } satisfies UpdateStatusInput)
 
     expect(result.ok).toBe(false)
     if (!result.ok) {
@@ -286,53 +263,15 @@ describe('request.service updateStatus', () => {
     }
   })
 
-  it('allows assigned agents to update their requests', async () => {
-    const result: Result<RequestUpdateResult> = await updateStatus(
-      agent,
-      {
-        id: 'req_update',
-        status: 'in_review',
-        version: 1,
-        idempotencyKey: '77777777-7777-4777-8777-777777777777',
-      } satisfies UpdateStatusInput,
-    )
+  it('lets any signed-in user update a request', async () => {
+    const result: Result<RequestUpdateResult> = await updateStatus(agent, {
+      id: 'req_update',
+      status: 'in_review',
+      version: 1,
+      idempotencyKey: '77777777-7777-4777-8777-777777777777',
+    } satisfies UpdateStatusInput)
 
     expect(result.ok).toBe(true)
-  })
-
-  it('rejects viewers and out-of-scope agents', async () => {
-    await insertRequest(ctx.db, {
-      id: 'req_other',
-      reference: 'SR-2026-000905',
-      status: 'new',
-      requesterId: 'user_admin',
-      assigneeId: 'user_admin',
-      categoryId: 'cat_general',
-    })
-
-    const viewerResult: Result<RequestUpdateResult> = await updateStatus(
-      viewer,
-      {
-        id: 'req_update',
-        status: 'in_review',
-        version: 1,
-        idempotencyKey: '88888888-8888-4888-8888-888888888888',
-      } satisfies UpdateStatusInput,
-    )
-    const agentResult: Result<RequestUpdateResult> = await updateStatus(
-      agent,
-      {
-        id: 'req_other',
-        status: 'in_review',
-        version: 1,
-        idempotencyKey: '99999999-9999-4999-8999-999999999999',
-      } satisfies UpdateStatusInput,
-    )
-
-    expect(viewerResult.ok).toBe(false)
-    expect(agentResult.ok).toBe(false)
-    if (!viewerResult.ok) expect(viewerResult.error.code).toBe('FORBIDDEN')
-    if (!agentResult.ok) expect(agentResult.error.code).toBe('FORBIDDEN')
   })
 
   it('replays the same idempotency key without a second write', async () => {
@@ -349,6 +288,36 @@ describe('request.service updateStatus', () => {
     expect(first.ok).toBe(true)
     expect(second.ok).toBe(true)
     expect(await countActivitiesByRequestId('req_update', ctx.db)).toBe(1)
+  })
+
+  it('returns not found for a missing request', async () => {
+    const result = await updateStatus(admin, {
+      id: 'req_missing',
+      status: 'in_review',
+      version: 1,
+      idempotencyKey: 'ffffffff-ffff-4fff-8fff-ffffffffffff',
+    })
+
+    expect(result.ok).toBe(false)
+    if (!result.ok) {
+      expect(result.error.code).toBe('NOT_FOUND')
+    }
+  })
+
+  it('returns the current request when status is unchanged', async () => {
+    const result = await updateStatus(admin, {
+      id: 'req_update',
+      status: 'new',
+      version: 1,
+      idempotencyKey: '99999999-9999-4999-8999-999999999999',
+    })
+
+    expect(result.ok).toBe(true)
+    if (result.ok) {
+      expect(result.data.status).toBe('new')
+      expect(result.data.version).toBe(1)
+    }
+    expect(await countActivitiesByRequestId('req_update', ctx.db)).toBe(0)
   })
 
   it('sets resolved_at when transitioning to resolved', async () => {
@@ -388,19 +357,16 @@ describe('request.service updateAssignee', () => {
       id: 'user_admin',
       email: 'admin@assunnah.test',
       name: 'Admin User',
-      role: 'admin',
     })
     await insertUser(ctx.db, {
       id: 'user_agent',
       email: 'agent@assunnah.test',
       name: 'Agent User',
-      role: 'agent',
     })
     await insertUser(ctx.db, {
       id: 'user_manager',
       email: 'manager@assunnah.test',
       name: 'Manager User',
-      role: 'manager',
     })
     await insertSeedCategories(ctx.db)
     await insertRequest(ctx.db, {
@@ -420,15 +386,12 @@ describe('request.service updateAssignee', () => {
   })
 
   it('assigns a request and records activity', async () => {
-    const result: Result<RequestUpdateResult> = await updateAssignee(
-      admin,
-      {
-        id: 'req_assign',
-        assigneeId: 'user_manager',
-        version: 1,
-        idempotencyKey: '66666666-6666-4666-8666-666666666666',
-      } satisfies UpdateAssigneeInput,
-    )
+    const result: Result<RequestUpdateResult> = await updateAssignee(admin, {
+      id: 'req_assign',
+      assigneeId: 'user_manager',
+      version: 1,
+      idempotencyKey: '66666666-6666-4666-8666-666666666666',
+    } satisfies UpdateAssigneeInput)
 
     expect(result.ok).toBe(true)
     if (result.ok) {
@@ -475,7 +438,7 @@ describe('request.service updateAssignee', () => {
     expect(await countActivitiesByRequestId('req_assign', ctx.db)).toBe(1)
   })
 
-  it('rejects agents assigning to someone else', async () => {
+  it('lets any signed-in user assign a request to someone else', async () => {
     await insertRequest(ctx.db, {
       id: 'req_agent_assign',
       reference: 'SR-2026-000907',
@@ -492,9 +455,75 @@ describe('request.service updateAssignee', () => {
       idempotencyKey: 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee',
     })
 
+    expect(result.ok).toBe(true)
+    if (result.ok) {
+      expect(result.data.assignee?.id).toBe('user_manager')
+    }
+  })
+
+  it('returns not found for a missing request', async () => {
+    const result = await updateAssignee(admin, {
+      id: 'req_missing',
+      assigneeId: 'user_manager',
+      version: 1,
+      idempotencyKey: '12121212-1212-4212-8212-121212121212',
+    })
+
     expect(result.ok).toBe(false)
     if (!result.ok) {
-      expect(result.error.code).toBe('FORBIDDEN')
+      expect(result.error.code).toBe('NOT_FOUND')
+    }
+  })
+
+  it('returns not found for an unknown assignee', async () => {
+    const result = await updateAssignee(admin, {
+      id: 'req_assign',
+      assigneeId: 'user_missing',
+      version: 1,
+      idempotencyKey: '13131313-1313-4313-8313-131313131313',
+    })
+
+    expect(result.ok).toBe(false)
+    if (!result.ok) {
+      expect(result.error.code).toBe('NOT_FOUND')
+    }
+  })
+
+  it('returns the current request when assignee is unchanged', async () => {
+    const result = await updateAssignee(admin, {
+      id: 'req_assign',
+      assigneeId: null,
+      version: 1,
+      idempotencyKey: '14141414-1414-4414-8414-141414141414',
+    })
+
+    expect(result.ok).toBe(true)
+    if (result.ok) {
+      expect(result.data.assignee).toBeNull()
+      expect(result.data.version).toBe(1)
+    }
+    expect(await countActivitiesByRequestId('req_assign', ctx.db)).toBe(0)
+  })
+
+  it('unassigns a request and records activity', async () => {
+    await updateAssignee(admin, {
+      id: 'req_assign',
+      assigneeId: 'user_manager',
+      version: 1,
+      idempotencyKey: '15151515-1515-4515-8515-151515151515',
+    })
+
+    const result = await updateAssignee(admin, {
+      id: 'req_assign',
+      assigneeId: null,
+      version: 2,
+      idempotencyKey: '16161616-1616-4616-8616-161616161616',
+    })
+
+    expect(result.ok).toBe(true)
+    if (result.ok) {
+      expect(result.data.assignee).toBeNull()
+      expect(result.data.version).toBe(3)
     }
   })
 })

@@ -29,5 +29,4 @@ test.describe('filters', () => {
 
     await freshContext.close()
   })
-
 })

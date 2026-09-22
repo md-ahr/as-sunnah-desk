@@ -15,10 +15,10 @@ Practically, that means the interesting question for every component is no longe
 import type { NextConfig } from 'next'
 
 const nextConfig: NextConfig = {
-  reactCompiler: true,        // already enabled
-  cacheComponents: true,      // use cache, cacheLife, cacheTag, PPR
-  partialPrefetching: true,   // per-route App Shell prefetch (16.3+, requires cacheComponents)
-  typedRoutes: true,          // typed <Link href> and router methods
+  reactCompiler: true, // already enabled
+  cacheComponents: true, // use cache, cacheLife, cacheTag, PPR
+  partialPrefetching: true, // per-route App Shell prefetch (16.3+, requires cacheComponents)
+  typedRoutes: true, // typed <Link href> and router methods
   experimental: {
     optimizePackageImports: ['lucide-react'],
   },
@@ -33,15 +33,15 @@ export default nextConfig
 
 Every read in this application falls into one of four buckets, and the bucket determines the mechanism. Getting this table right is most of the work; the code then follows from it.
 
-| Data | Cardinality | Per user? | Freshness need | Mechanism |
-|---|---|---|---|---|
-| Categories, statuses, priorities | Very low | No | Minutes | `use cache` + `cacheLife('hours')` |
-| Assignable users list | Low | No | Minutes | `use cache` + `cacheLife('minutes')` |
-| Facet counts per status | Low | No | Minutes | `use cache` + `cacheLife('minutes')` + `cacheTag` |
-| Current user | One per session | **Yes** | Per request | `use cache: private` |
-| Request list page | **Very high** | Yes | Immediate | **Not cached** — streams behind Suspense |
-| Single request + history | High | Yes | Immediate | **Not cached** — streams behind Suspense |
-| Assignee summary (insights) | Low | No | Hours | `use cache` + `cacheLife('hours')` |
+| Data                             | Cardinality     | Per user? | Freshness need | Mechanism                                         |
+| -------------------------------- | --------------- | --------- | -------------- | ------------------------------------------------- |
+| Categories, statuses, priorities | Very low        | No        | Minutes        | `use cache` + `cacheLife('hours')`                |
+| Assignable users list            | Low             | No        | Minutes        | `use cache` + `cacheLife('minutes')`              |
+| Facet counts per status          | Low             | No        | Minutes        | `use cache` + `cacheLife('minutes')` + `cacheTag` |
+| Current user                     | One per session | **Yes**   | Per request    | `use cache: private`                              |
+| Request list page                | **Very high**   | Yes       | Immediate      | **Not cached** — streams behind Suspense          |
+| Single request + history         | High            | Yes       | Immediate      | **Not cached** — streams behind Suspense          |
+| Assignee summary (insights)      | Low             | No        | Hours          | `use cache` + `cacheLife('hours')`                |
 
 ### Why the request list is deliberately not cached
 
@@ -51,7 +51,7 @@ The list query is keyed on the full filter combination: search text, multiple st
 
 It is also the data that must be freshest. A user who changes a status expects the list to reflect it immediately.
 
-So the list streams uncached behind a Suspense boundary, and the performance work goes where it actually pays: the SQL is a keyset seek over a composite index returning one page of rows (default 10, up to 100 via `perPage`), which is fast enough that caching it would be optimising the wrong layer. What *is* cached is the surrounding low-cardinality reference data — the category names, the assignee list, the facet counts — which would otherwise be re-queried on every page view.
+So the list streams uncached behind a Suspense boundary, and the performance work goes where it actually pays: the SQL is a keyset seek over a composite index returning one page of rows (default 10, up to 100 via `perPage`), which is fast enough that caching it would be optimising the wrong layer. What _is_ cached is the surrounding low-cardinality reference data — the category names, the assignee list, the facet counts — which would otherwise be re-queried on every page view.
 
 Choosing not to cache, for stated reasons, is a caching strategy. Caching everything reachable is not.
 
@@ -115,10 +115,7 @@ export async function getFilterOptions() {
   cacheLife('minutes')
   cacheTag('reference:filters')
 
-  const [categories, assignees] = await Promise.all([
-    listCategories(),
-    listAssignableUsers(),
-  ])
+  const [categories, assignees] = await Promise.all([listCategories(), listAssignableUsers()])
   return { categories, assignees }
 }
 ```
@@ -143,7 +140,7 @@ import { findActiveUserById } from '@/server/repositories/user.repository'
 
 export async function getCurrentUser(): Promise<AuthenticatedUser> {
   'use cache: private'
-  cacheLife('minutes')          // stale 5m — above the 30s prefetch floor
+  cacheLife('minutes') // stale 5m — above the 30s prefetch floor
 
   const { userId } = await getSession()
   if (!userId) redirect('/login')
@@ -172,7 +169,7 @@ export default function PortalLayout({ children }: LayoutProps<'/(portal)'>) {
   return (
     <div className="min-h-dvh">
       <Suspense fallback={<HeaderSkeleton />}>
-        <PortalHeader />          {/* creates the promise inside the boundary */}
+        <PortalHeader /> {/* creates the promise inside the boundary */}
       </Suspense>
       {children}
     </div>
@@ -199,12 +196,12 @@ export const tags = {
 
 Which invalidation API to use is a real decision in Next.js 16, because there are now four and they behave differently:
 
-| API | Callable from | Semantics | Used here for |
-|---|---|---|---|
-| `updateTag(tag)` | **Server Actions only** | Expires immediately; next read waits for fresh data | **Status and assignee updates** — the user must see their own change |
-| `revalidateTag(tag, profile)` | Actions + Route Handlers | Stale-while-revalidate | Background refresh of facet counts |
-| `refresh()` | **Server Actions only** | Refreshes the client router | After mutations that change surrounding chrome |
-| `revalidatePath(path, type?)` | Actions + Route Handlers | Path-based invalidation | Not used — tag-based is more precise |
+| API                           | Callable from            | Semantics                                           | Used here for                                                        |
+| ----------------------------- | ------------------------ | --------------------------------------------------- | -------------------------------------------------------------------- |
+| `updateTag(tag)`              | **Server Actions only**  | Expires immediately; next read waits for fresh data | **Status and assignee updates** — the user must see their own change |
+| `revalidateTag(tag, profile)` | Actions + Route Handlers | Stale-while-revalidate                              | Background refresh of facet counts                                   |
+| `refresh()`                   | **Server Actions only**  | Refreshes the client router                         | After mutations that change surrounding chrome                       |
+| `revalidatePath(path, type?)` | Actions + Route Handlers | Path-based invalidation                             | Not used — tag-based is more precise                                 |
 
 `updateTag` is the right primitive for this application's update workflow, and it is new in 16. It provides read-your-writes: the mutation expires the cache and the next read blocks for fresh data, so a user never sees their own change reflected as stale. `revalidateTag` would show stale content while refreshing in the background — acceptable for a blog, wrong for a work queue where someone just changed a status and needs to trust what they see.
 
@@ -214,7 +211,7 @@ Note the breaking change: `revalidateTag(tag)` with one argument is deprecated i
 // Inside the update-status Server Action, after a successful write:
 updateTag(tags.request(id))
 updateTag(tags.requestActivity(id))
-revalidateTag(tags.facetCounts(), 'max')   // counts can lag a moment
+revalidateTag(tags.facetCounts(), 'max') // counts can lag a moment
 ```
 
 The distinction is intentional: the record the user just edited must be immediately correct; an aggregate count in a filter sidebar can be a few seconds stale.
@@ -257,15 +254,13 @@ This is request-scoped memoisation, not caching — nothing is shared between re
 Under Cache Components, `generateMetadata` follows the same rules as any component. If it reads runtime data or performs uncached I/O, it defers to request time:
 
 ```tsx
-export async function generateMetadata(
-  props: PageProps<'/requests/[id]'>,
-): Promise<Metadata> {
+export async function generateMetadata(props: PageProps<'/requests/[id]'>): Promise<Metadata> {
   const { id } = await props.params
-  const request = await findRequestById(id)   // memoised; page reuses it
+  const request = await findRequestById(id) // memoised; page reuses it
   if (!request) return { title: 'Request not found' }
   return {
     title: `${request.reference} · ${request.subject}`,
-    robots: { index: false, follow: false },   // internal tool
+    robots: { index: false, follow: false }, // internal tool
   }
 }
 ```

@@ -35,6 +35,7 @@ export function SearchInput({ params }: SearchInputProps) {
 
     nextParams.delete('cursor')
     nextParams.delete('page')
+    nextParams.delete('seek')
 
     startNavigation(() => {
       const query = nextParams.toString()
@@ -52,13 +53,7 @@ export function SearchInput({ params }: SearchInputProps) {
           target.tagName === 'TEXTAREA' ||
           target.tagName === 'SELECT')
 
-      if (
-        event.key === '/' &&
-        !inEditable &&
-        !event.metaKey &&
-        !event.ctrlKey &&
-        !event.altKey
-      ) {
+      if (event.key === '/' && !inEditable && !event.metaKey && !event.ctrlKey && !event.altKey) {
         event.preventDefault()
         inputRef.current?.focus()
         return
@@ -82,12 +77,12 @@ export function SearchInput({ params }: SearchInputProps) {
       ref={formRef}
       method="get"
       action="/requests"
-      className="relative w-full max-w-md"
+      className="relative w-full max-w-md basis-full sm:basis-auto"
       onSubmit={(event) => {
         event.preventDefault()
       }}
     >
-      {searchParamHiddenFields(params, { q: true, cursor: true, page: true })}
+      {searchParamHiddenFields(params, { q: true, cursor: true, page: true, seek: true })}
       <input
         ref={inputRef}
         type="search"
@@ -101,13 +96,13 @@ export function SearchInput({ params }: SearchInputProps) {
         aria-describedby="search-hint"
         placeholder="Search by reference or subject"
         className={cn(
-          'h-8 w-full min-w-0 rounded-lg border border-input bg-transparent px-2.5 py-1 text-base transition-colors outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 md:text-sm dark:bg-input/30',
+          'border-input placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 dark:bg-input/30 h-8 w-full min-w-0 rounded-lg border bg-transparent px-2.5 py-1 text-base transition-colors outline-none focus-visible:ring-3 md:text-sm',
         )}
       />
       {isPending && (
         <Loader2
           aria-hidden="true"
-          className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 animate-spin text-muted-foreground"
+          className="text-muted-foreground pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 animate-spin"
         />
       )}
       <p id="search-hint" className="sr-only">

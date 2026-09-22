@@ -31,9 +31,7 @@ test.describe('dashboard', () => {
   test('passes axe on initial load', async ({ page }) => {
     await expect(page.getByRole('heading', { level: 1, name: 'Service requests' })).toBeVisible()
     await expect(page).toHaveTitle(/Service requests/)
-    const results = await new AxeBuilder({ page })
-      .disableRules(['color-contrast'])
-      .analyze()
+    const results = await new AxeBuilder({ page }).disableRules(['color-contrast']).analyze()
     expect(results.violations).toEqual([])
   })
 })

@@ -8,11 +8,11 @@ Environment variables, database scripts, seeded test accounts, and CI — everyt
 
 Parsed once at startup in `src/server/env.ts` with Zod. A missing or invalid variable fails immediately, not on first login.
 
-| Variable | Required | Default | Purpose |
-|---|---|---|---|
-| `DATABASE_URL` | No | `file:./data/app.db` | libSQL / SQLite file path. Relative to project root. |
-| `SESSION_PASSWORD` | **Yes** | — | iron-session seal password. **Minimum 32 characters.** Generate with `openssl rand -base64 32`. |
-| `NODE_ENV` | No | `development` | Set by Next.js. Affects cookie `secure` flag (see [06](./06-auth-and-security.md#sessions)). |
+| Variable           | Required | Default              | Purpose                                                                                         |
+| ------------------ | -------- | -------------------- | ----------------------------------------------------------------------------------------------- |
+| `DATABASE_URL`     | No       | `file:./data/app.db` | libSQL / SQLite file path. Relative to project root.                                            |
+| `SESSION_PASSWORD` | **Yes**  | —                    | iron-session seal password. **Minimum 32 characters.** Generate with `openssl rand -base64 32`. |
+| `NODE_ENV`         | No       | `development`        | Set by Next.js. Affects cookie `secure` flag (see [06](./06-auth-and-security.md#sessions)).    |
 
 `.env.example` (committed):
 
@@ -45,14 +45,14 @@ Import `env` for its side effect in `src/server/env.ts` from the root layout or 
 
 All scripts live in `package.json` and operate on `DATABASE_URL`.
 
-| Script | Command | When to use |
-|---|---|---|
-| `db:generate` | `drizzle-kit generate` | After changing `src/server/db/schema.ts` — creates SQL migration files in `drizzle/`. |
-| `db:migrate` | `drizzle-kit migrate` | Apply pending migrations to the database file. |
-| `db:push` | `drizzle-kit push` | **Dev only** — push schema directly without a migration. Do not use for the committed workflow. |
-| `db:seed` | `tsx src/server/db/seed.ts` | Populate 12,000 requests + reference data. Idempotent: truncates and re-seeds. |
-| `db:studio` | `drizzle-kit studio` | Visual browser UI for inspecting data during development. |
-| `db:reset` | `rm -f data/app.db && pnpm db:migrate && pnpm db:seed` | Fresh database from migrations + seed. |
+| Script        | Command                                                | When to use                                                                                     |
+| ------------- | ------------------------------------------------------ | ----------------------------------------------------------------------------------------------- |
+| `db:generate` | `drizzle-kit generate`                                 | After changing `src/server/db/schema.ts` — creates SQL migration files in `drizzle/`.           |
+| `db:migrate`  | `drizzle-kit migrate`                                  | Apply pending migrations to the database file.                                                  |
+| `db:push`     | `drizzle-kit push`                                     | **Dev only** — push schema directly without a migration. Do not use for the committed workflow. |
+| `db:seed`     | `tsx src/server/db/seed.ts`                            | Populate 12,000 requests + reference data. Idempotent: truncates and re-seeds.                  |
+| `db:studio`   | `drizzle-kit studio`                                   | Visual browser UI for inspecting data during development.                                       |
+| `db:reset`    | `rm -f data/app.db && pnpm db:migrate && pnpm db:seed` | Fresh database from migrations + seed.                                                          |
 
 **First-time setup:**
 
@@ -72,23 +72,17 @@ The `data/` directory is gitignored. Migrations in `drizzle/` are committed.
 
 ## Seeded test accounts
 
-Four fixed accounts — one per role — are inserted by `seed.ts` before generated users. Passwords are hashed with Argon2id at seed time. These credentials are **for local development and E2E tests only**.
+Every signed-in user can review and update every request. The brief asks for authentication, not separate roles.
 
-| Role | Email | Password | Capabilities (summary) |
-|---|---|---|---|
-| `admin` | `admin@assunnah.test` | `test.admin` | Read all requests; update status and assignee; assign to anyone |
-| `manager` | `manager@assunnah.test` | `test.manager` | Same as admin for this portal |
-| `agent` | `agent@assunnah.test` | `test.agent` | Read **assigned** requests only; update status and assignee on own queue |
-| `viewer` | `viewer@assunnah.test` | `test.viewer` | Read all requests; **no** update controls |
+Use this account for local development and E2E:
 
-Fixed user ids (stable for tests and foreign keys):
+| Email                 | Password     |
+| --------------------- | ------------ |
+| `admin@assunnah.test` | `test.admin` |
 
-| Role | `users.id` |
-|---|---|
-| admin | `user_admin` |
-| manager | `user_manager` |
-| agent | `user_agent` |
-| viewer | `user_viewer` |
+The seed also inserts staff records used as requesters and assignees (`manager@assunnah.test` / `test.manager`, `agent@assunnah.test` / `test.agent`, `viewer@assunnah.test` / `test.viewer`). Those accounts can sign in, and they have the same access. Passwords are hashed with Argon2id at seed time. **Local development and E2E only.**
+
+Fixed user ids (stable for tests and foreign keys): `user_admin`, `user_manager`, `user_agent`, `user_viewer`.
 
 **E2E fixture record:** `SR-2026-000142` — a request with a known reference, used in mutation specs. Mutation tests use the reserved block `SR-2026-0009xx` so parallel specs do not collide ([09](./09-testing-strategy.md#test-data)).
 
@@ -98,20 +92,20 @@ Fixed user ids (stable for tests and foreign keys):
 
 Twelve fixed categories are inserted by `seed.ts`. Filter URLs use the **slug** column (`?category=it-support`); `service_requests.category_id` stores the internal **id**.
 
-| Name | Slug (URL) | `categories.id` (FK) |
-|---|---|---|
-| IT Support | `it-support` | `cat_it_support` |
-| Facilities | `facilities` | `cat_facilities` |
-| Human Resources | `hr` | `cat_hr` |
-| Finance & Payroll | `finance` | `cat_finance` |
-| Procurement | `procurement` | `cat_procurement` |
-| Events & Programs | `events` | `cat_events` |
-| Communications | `communications` | `cat_communications` |
-| Building Maintenance | `maintenance` | `cat_maintenance` |
-| Security & Access | `security` | `cat_security` |
-| Transport & Logistics | `transport` | `cat_transport` |
-| Legal & Compliance | `legal` | `cat_legal` |
-| General Enquiries | `general` | `cat_general` |
+| Name                  | Slug (URL)       | `categories.id` (FK) |
+| --------------------- | ---------------- | -------------------- |
+| IT Support            | `it-support`     | `cat_it_support`     |
+| Facilities            | `facilities`     | `cat_facilities`     |
+| Human Resources       | `hr`             | `cat_hr`             |
+| Finance & Payroll     | `finance`        | `cat_finance`        |
+| Procurement           | `procurement`    | `cat_procurement`    |
+| Events & Programs     | `events`         | `cat_events`         |
+| Communications        | `communications` | `cat_communications` |
+| Building Maintenance  | `maintenance`    | `cat_maintenance`    |
+| Security & Access     | `security`       | `cat_security`       |
+| Transport & Logistics | `transport`      | `cat_transport`      |
+| Legal & Compliance    | `legal`          | `cat_legal`          |
+| General Enquiries     | `general`        | `cat_general`        |
 
 `lib/search-params/categories.ts` exports `CATEGORY_SLUGS` from this table so the Zod schema and filter UI stay in sync with the seed.
 
@@ -119,12 +113,12 @@ Twelve fixed categories are inserted by `seed.ts`. Filter URLs use the **slug** 
 
 ## Seed volume
 
-| Table | Rows | Notes |
-|---|---|---|
-| `users` | 60 | 4 fixed accounts above + 56 generated |
-| `categories` | 12 | Fixed rows above — slugs in URL, ids as FK |
-| `service_requests` | **12,000** | Deliberately above the brief's 10,000+ threshold |
-| `request_activities` | ~48,000 | 2–8 per request, chronologically consistent |
+| Table                | Rows       | Notes                                            |
+| -------------------- | ---------- | ------------------------------------------------ |
+| `users`              | 60         | 4 fixed accounts above + 56 generated            |
+| `categories`         | 12         | Fixed rows above — slugs in URL, ids as FK       |
+| `service_requests`   | **12,000** | Deliberately above the brief's 10,000+ threshold |
+| `request_activities` | ~48,000    | 2–8 per request, chronologically consistent      |
 
 Detail: [04 · Data model and scale](./04-data-model-and-scale.md#seeding).
 
@@ -163,12 +157,12 @@ Local hooks (Lefthook) run a **subset**: pre-commit = lint-staged; pre-push = ty
 
 ## Routes reference
 
-| Route | Auth | Purpose |
-|---|---|---|
-| `/login` | Public | Login form |
-| `/requests` | Protected | Dashboard (default landing after login) |
+| Route            | Auth      | Purpose                                                                                                                    |
+| ---------------- | --------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `/login`         | Public    | Login form                                                                                                                 |
+| `/requests`      | Protected | Dashboard (default landing after login)                                                                                    |
 | `/requests/[id]` | Protected | Request detail + activity + assignee update. Segment value is the **reference** (`SR-2026-000142`), not the surrogate UUID |
-| `/insights` | Protected | Per-assignee summary table |
-| `/api/health` | Public | Health check (`{ status: 'ok' }`) |
+| `/insights`      | Protected | Per-assignee summary table                                                                                                 |
+| `/api/health`    | Public    | Health check (`{ status: 'ok' }`)                                                                                          |
 
 `proxy.ts` redirects unauthenticated users to `/login?next=<path>`. Root `/` redirects to `/requests`.

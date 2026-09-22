@@ -1,9 +1,6 @@
 import { sql } from 'drizzle-orm'
 import { index, integer, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core'
 
-export const USER_ROLES = ['admin', 'manager', 'agent', 'viewer'] as const
-export type UserRole = (typeof USER_ROLES)[number]
-
 export const REQUEST_STATUSES = [
   'new',
   'in_review',
@@ -34,7 +31,6 @@ export const users = sqliteTable(
     email: text('email').notNull(),
     passwordHash: text('password_hash').notNull(),
     name: text('name').notNull(),
-    role: text('role', { enum: USER_ROLES }).notNull(),
     isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
     createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull(),
   },

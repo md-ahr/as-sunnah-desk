@@ -14,17 +14,19 @@ export default function RequestsError({
   return (
     <div role="alert" className="mx-auto max-w-md py-16 text-center">
       <h2 className="text-lg font-medium">We could not load requests</h2>
-      <p className="mt-1 text-sm text-muted-foreground">
+      <p className="text-muted-foreground mt-1 text-sm">
         This is usually temporary. Try again, or return to the dashboard.
       </p>
       <div className="mt-4 flex justify-center gap-2">
-        <Button type="button" onClick={retry}>Try again</Button>
+        <Button type="button" onClick={retry}>
+          Try again
+        </Button>
         <Button variant="outline" render={<Link href="/requests" />}>
           Back to dashboard
         </Button>
       </div>
       {process.env.NODE_ENV === 'development' && (
-        <pre className="mt-4 overflow-x-auto rounded bg-muted p-3 text-left text-xs">
+        <pre className="bg-muted mt-4 overflow-x-auto rounded p-3 text-left text-xs">
           {error.message}
         </pre>
       )}

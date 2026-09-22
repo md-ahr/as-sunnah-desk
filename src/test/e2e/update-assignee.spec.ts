@@ -12,10 +12,12 @@ test.describe('update assignee', () => {
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
 
     const before = await page.getByTestId('activity-entry').count()
-    await page.getByRole('combobox', { name: 'Assignee' }).click()
-    await page.getByRole('option', { name: 'Admin User' }).click()
+    await page.getByRole('button', { name: 'Open options' }).click()
+    const agentOption = page.getByRole('option', { name: 'Agent User' })
+    await expect(agentOption).toBeVisible()
+    await agentOption.click()
 
-    await expect(page.getByText('Assigned to Admin User')).toBeVisible()
+    await expect(page.getByText('Assigned to Agent User')).toBeVisible()
     await expect(page.getByTestId('activity-entry')).toHaveCount(before + 1)
   })
 
@@ -24,7 +26,7 @@ test.describe('update assignee', () => {
     await page.goto(`/requests/${KEYBOARD_REFERENCE}`)
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
 
-    const combobox = page.getByRole('combobox', { name: 'Assignee' })
+    const combobox = page.getByRole('combobox', { name: 'Assignee', exact: true })
     await combobox.click()
     await combobox.pressSequentially('Admin User')
     const option = page.getByRole('option', { name: 'Admin User' })

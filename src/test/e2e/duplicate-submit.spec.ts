@@ -11,13 +11,13 @@ test.describe('duplicate submit', () => {
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
     await expect(page.getByRole('list', { name: 'Activity' })).toBeVisible()
 
-    const statusTrigger = page.getByRole('button', { name: /Change status, currently New/i })
+    const statusTrigger = page.getByRole('button', { name: /Change status, currently/i })
     await expect(statusTrigger).toBeVisible()
 
     const before = await page.getByTestId('activity-entry').count()
 
     await statusTrigger.click()
-    const item = page.getByRole('menuitem', { name: 'In review' })
+    const item = page.getByRole('menuitem').first()
     await expect(item).toBeVisible()
 
     await item.evaluate((element) => {

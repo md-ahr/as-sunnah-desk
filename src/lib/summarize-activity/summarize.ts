@@ -3,7 +3,11 @@ import {
   createAccumulationState,
   toSummaryResult,
 } from '@/lib/summarize-activity/accumulate'
-import type { ActivityRecord, SummarizeOptions, SummaryResult } from '@/lib/summarize-activity/types'
+import type {
+  ActivityRecord,
+  SummarizeOptions,
+  SummaryResult,
+} from '@/lib/summarize-activity/types'
 
 export function summarizeActivityByAssignee(
   records: Iterable<ActivityRecord>,

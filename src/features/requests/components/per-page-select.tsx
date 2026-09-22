@@ -1,44 +1,68 @@
-import Link from 'next/link'
+'use client'
 
+import { useRouter } from 'next/navigation'
+import { useId } from 'react'
+
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { useDashboardNavigation } from '@/features/requests/components/dashboard-navigation'
 import { toRoute } from '@/lib/routes'
 import type { SearchParams } from '@/lib/search-params/schema'
 import { serialiseSearchParams, withSearchParams } from '@/lib/search-params/schema'
-import { cn } from '@/lib/utils'
 
 const PAGE_SIZES = [10, 25, 50, 100] as const
+
+type PageSize = (typeof PAGE_SIZES)[number]
+
+function isPageSize(value: string): value is `${PageSize}` {
+  return (PAGE_SIZES as readonly number[]).some((size) => String(size) === value)
+}
 
 type PerPageSelectProps = {
   params: SearchParams
 }
 
 export function PerPageSelect({ params }: PerPageSelectProps) {
-  return (
-    <nav aria-label="Rows per page" className="flex items-center gap-2">
-      <span className="text-sm text-muted-foreground">Rows</span>
-      <div className="flex items-center gap-1">
-        {PAGE_SIZES.map((size) => {
-          const href = `/requests?${serialiseSearchParams(
-            withSearchParams(params, { perPage: size }),
-          )}`
-          const isCurrent = params.perPage === size
+  const router = useRouter()
+  const labelId = useId()
+  const { startNavigation } = useDashboardNavigation()
 
-          return (
-            <Link
-              key={size}
-              href={toRoute(href)}
-              aria-current={isCurrent ? 'page' : undefined}
-              className={cn(
-                'inline-flex min-h-9 min-w-9 items-center justify-center rounded-md border px-2 text-sm',
-                isCurrent
-                  ? 'border-primary bg-primary text-primary-foreground'
-                  : 'border-border hover:bg-muted',
-              )}
-            >
+  function onValueChange(value: string | null) {
+    if (!value || !isPageSize(value)) return
+
+    const perPage = Number(value) as PageSize
+    if (perPage === params.perPage) return
+
+    const query = serialiseSearchParams(withSearchParams(params, { perPage }))
+    const href = query ? `/requests?${query}` : '/requests'
+
+    startNavigation(() => {
+      router.push(toRoute(href))
+    })
+  }
+
+  return (
+    <div className="flex items-center gap-2">
+      <span id={labelId} className="text-muted-foreground text-sm whitespace-nowrap">
+        Items per page
+      </span>
+      <Select value={String(params.perPage)} onValueChange={onValueChange}>
+        <SelectTrigger aria-labelledby={labelId} size="sm" className="w-19">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent align="start">
+          {PAGE_SIZES.map((size) => (
+            <SelectItem key={size} value={String(size)}>
               {size}
-            </Link>
-          )
-        })}
-      </div>
-    </nav>
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
   )
 }

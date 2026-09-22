@@ -38,7 +38,6 @@ describe('DAL requireUser', () => {
       id: 'user_admin',
       email: 'admin@assunnah.test',
       name: 'Admin User',
-      role: 'admin',
     })
 
     const result = await requireUser()
@@ -49,7 +48,6 @@ describe('DAL requireUser', () => {
         id: 'user_admin',
         email: 'admin@assunnah.test',
         name: 'Admin User',
-        role: 'admin',
       })
     }
     expect(userRepository.findActiveUserById).toHaveBeenCalledWith('user_admin')

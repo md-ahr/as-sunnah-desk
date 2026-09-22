@@ -2,12 +2,7 @@ import 'server-only'
 
 import type { InferInsertModel, InferSelectModel } from 'drizzle-orm'
 
-import type {
-  categories,
-  requestActivities,
-  serviceRequests,
-  users,
-} from '@/server/db/schema'
+import type { categories, requestActivities, serviceRequests, users } from '@/server/db/schema'
 
 export type UserRow = InferSelectModel<typeof users>
 export type UserInsert = InferInsertModel<typeof users>

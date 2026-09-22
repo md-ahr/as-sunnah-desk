@@ -51,12 +51,6 @@ export function LoginForm({ next }: LoginFormProps) {
         error={fieldError(state, 'password')}
       />
 
-      {state.error && !('fields' in state.error) ? (
-        <p role="alert" className="text-sm text-destructive">
-          {messageFor(state.error)}
-        </p>
-      ) : null}
-
       <Button type="submit" disabled={pending} className="h-10 w-full px-4">
         {pending ? 'Signing in…' : 'Sign in'}
       </Button>

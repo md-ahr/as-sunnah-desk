@@ -1,8 +1,7 @@
 import type { AppError } from '@/lib/app-error'
 
 export type Result<T, E = AppError> =
-  | { readonly ok: true; readonly data: T }
-  | { readonly ok: false; readonly error: E }
+  { readonly ok: true; readonly data: T } | { readonly ok: false; readonly error: E }
 
 export function ok<T>(data: T): Result<T, never> {
   return { ok: true, data }

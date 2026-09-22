@@ -17,7 +17,6 @@ erDiagram
         text email UK
         text password_hash
         text name
-        text role "admin|manager|agent|viewer"
         integer is_active
         integer created_at
     }
@@ -104,13 +103,13 @@ Encoded as data, not as branching logic:
 ```ts
 // lib/request-status.ts
 export const STATUS_TRANSITIONS = {
-  new:         ['in_review', 'rejected'],
-  in_review:   ['in_progress', 'rejected'],
+  new: ['in_review', 'rejected'],
+  in_review: ['in_progress', 'rejected'],
   in_progress: ['on_hold', 'resolved'],
-  on_hold:     ['in_progress', 'rejected'],
-  resolved:    ['closed', 'in_progress'],
-  rejected:    ['closed'],
-  closed:      [],
+  on_hold: ['in_progress', 'rejected'],
+  resolved: ['closed', 'in_progress'],
+  rejected: ['closed'],
+  closed: [],
 } as const satisfies Record<RequestStatus, readonly RequestStatus[]>
 
 export function canTransition(from: RequestStatus, to: RequestStatus): boolean {
@@ -185,7 +184,13 @@ LIMIT 26;                          -- 26 to detect "has next page"
 
 Cost is O(log n) at any depth: page 400 is as fast as page 1. Fetching `limit + 1` rows is how "is there a next page" is answered without a second query.
 
-**The honest trade-off.** Keyset pagination gives Next and Previous, not "jump to page 47". For a work queue that is the right shape — nobody navigates to page 47 of a request list; they filter. But because the brief explicitly asks for pagination, the UI also offers bounded page numbers for the first 20 pages, where `OFFSET` is still cheap, and falls back to cursor-only navigation beyond that. Both modes are representable in the URL.
+**The honest trade-off.** Keyset pagination does not support an arbitrary jump to page 47 without walking. The numbered pager uses three cheap seeks, all representable in the URL:
+
+- Pages 1–20 use a bounded `OFFSET` (still a small index range).
+- The page immediately before or after the current one uses the keyset cursor already returned with that page.
+- The last page is a reverse index seek (`ORDER BY` flipped, `LIMIT` the remainder). That is O(log n) at any depth. It is not `OFFSET` to the end.
+
+Middle pages stay behind the ellipsis. Reaching them means stepping with Next and Previous, or filtering the queue.
 
 ### Counting
 
@@ -204,12 +209,12 @@ Facet counts (how many requests per status) are a different case: low cardinalit
 
 What each filter param carries in the URL vs what reaches SQL:
 
-| Filter | URL param | Example | Resolved to (SQL) |
-|---|---|---|---|
-| Category | `category` | `it-support` | `categories.id` → `service_requests.category_id` |
-| Assignee | `assignee` | `user_admin`, `unassigned` | `users.id` or `IS NULL` |
-| Status / priority | same enum as DB | `new`, `urgent` | column value directly |
-| Request detail segment | `[id]` | `SR-2026-000142` | `service_requests.reference` |
+| Filter                 | URL param       | Example                    | Resolved to (SQL)                                |
+| ---------------------- | --------------- | -------------------------- | ------------------------------------------------ |
+| Category               | `category`      | `it-support`               | `categories.id` → `service_requests.category_id` |
+| Assignee               | `assignee`      | `user_admin`, `unassigned` | `users.id` or `IS NULL`                          |
+| Status / priority      | same enum as DB | `new`, `urgent`            | column value directly                            |
+| Request detail segment | `[id]`          | `SR-2026-000142`           | `service_requests.reference`                     |
 
 Slug → id resolution happens in `RequestService` using the cached category list from `reference.repository`. Unknown slugs are stripped during `normalise()`; the repository only ever receives `categoryIds: string[]`.
 
@@ -248,9 +253,9 @@ Three properties matter here. Filters are `undefined` when absent and filtered o
 
 ```ts
 const SORT_COLUMNS = {
-  updated_desc:  { column: requests.updatedAt, direction: 'desc' },
-  updated_asc:   { column: requests.updatedAt, direction: 'asc' },
-  created_desc:  { column: requests.createdAt, direction: 'desc' },
+  updated_desc: { column: requests.updatedAt, direction: 'desc' },
+  updated_asc: { column: requests.updatedAt, direction: 'asc' },
+  created_desc: { column: requests.createdAt, direction: 'desc' },
   priority_desc: { column: requests.priorityRank, direction: 'desc' },
 } as const
 ```
@@ -267,12 +272,12 @@ This is also a security boundary. Repositories return narrow, explicitly shaped 
 
 `pnpm db:seed` generates a realistic dataset:
 
-| Table | Rows | Notes |
-|---|---|---|
-| `users` | 60 | 4 fixed credentialed accounts (one per role) + 56 generated — emails and passwords in [15 · Local setup](./15-local-setup.md#seeded-test-accounts) |
-| `categories` | 12 | Fixed rows — slugs in URL, ids as FK. Full list: [15 · Seeded categories](./15-local-setup.md#seeded-categories) |
-| `service_requests` | 12,000 | Above the stated threshold, deliberately |
-| `request_activities` | ~48,000 | 2–8 per request, chronologically consistent |
+| Table                | Rows    | Notes                                                                                                                                    |
+| -------------------- | ------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `users`              | 60      | 4 credentialed staff accounts with equal access + 56 generated people — see [15 · Local setup](./15-local-setup.md#seeded-test-accounts) |
+| `categories`         | 12      | Fixed rows — slugs in URL, ids as FK. Full list: [15 · Seeded categories](./15-local-setup.md#seeded-categories)                         |
+| `service_requests`   | 12,000  | Above the stated threshold, deliberately                                                                                                 |
+| `request_activities` | ~48,000 | 2–8 per request, chronologically consistent                                                                                              |
 
 Realism matters more than volume. The distribution is skewed the way real queues are — most requests `new` or `in_progress`, few `closed`; priority weighted toward `medium`; `created_at` spread over 18 months with weekday clustering; about 15% unassigned; resolution times log-normal rather than uniform. A uniformly random dataset would make every filter return roughly the same count and would hide the index behaviour the design is meant to demonstrate.
 
@@ -284,11 +289,11 @@ Insertion is batched inside a single transaction, and the FTS index is populated
 
 Worth stating so the boundaries of the design are explicit rather than assumed:
 
-| Scale | Status | Change required |
-|---|---|---|
-| 10k–100k | Works as designed | None |
-| ~1M | Works, counts get coarser | Lower the count cap; add covering indexes for the hot filter combinations |
-| 10M+ | SQLite becomes the limit | Swap the driver to PostgreSQL. Only `server/db/client.ts` and the FTS implementation (→ `tsvector`) change; repositories keep their signatures |
-| Concurrent writers | SQLite serialises writes | This portal is read-heavy with occasional single-record updates, so it is not a constraint here. It would be for bulk operations |
+| Scale              | Status                    | Change required                                                                                                                                |
+| ------------------ | ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| 10k–100k           | Works as designed         | None                                                                                                                                           |
+| ~1M                | Works, counts get coarser | Lower the count cap; add covering indexes for the hot filter combinations                                                                      |
+| 10M+               | SQLite becomes the limit  | Swap the driver to PostgreSQL. Only `server/db/client.ts` and the FTS implementation (→ `tsvector`) change; repositories keep their signatures |
+| Concurrent writers | SQLite serialises writes  | This portal is read-heavy with occasional single-record updates, so it is not a constraint here. It would be for bulk operations               |
 
 The repository interface is the seam that makes the PostgreSQL swap a contained change rather than a rewrite. That is the main reason services talk to repositories and never to Drizzle directly.

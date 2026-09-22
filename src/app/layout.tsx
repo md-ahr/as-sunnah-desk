@@ -29,10 +29,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<'/'>) {
   return (
-    <html
-      lang="en"
-      className={`${sourceSans.variable} ${ibmPlexMono.variable} h-full antialiased`}
-    >
+    <html lang="en" className={`${sourceSans.variable} ${ibmPlexMono.variable} h-full antialiased`}>
       <body className="flex min-h-full flex-col" data-env={env.NODE_ENV}>
         <TooltipProvider>{children}</TooltipProvider>
         <Toaster richColors closeButton position="top-right" />

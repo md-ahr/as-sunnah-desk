@@ -25,7 +25,10 @@ export function PriorityBadge({ priority }: PriorityBadgeProps) {
   const dots = PRIORITY_DOTS[priority]
 
   return (
-    <Badge variant="outline" className={cn('gap-1.5 border-transparent', PRIORITY_STYLES[priority])}>
+    <Badge
+      variant="outline"
+      className={cn('gap-1.5 border-transparent', PRIORITY_STYLES[priority])}
+    >
       <span aria-hidden="true" className="inline-flex gap-0.5">
         {Array.from({ length: dots }, (_, index) => (
           <span key={index} className="size-1.5 rounded-full bg-current" />

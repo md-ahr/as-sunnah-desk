@@ -15,20 +15,22 @@ export default function GlobalError({
 }) {
   return (
     <html lang="en">
-      <body className="flex min-h-dvh flex-col items-center justify-center bg-background px-4 text-foreground antialiased">
+      <body className="bg-background text-foreground flex min-h-dvh flex-col items-center justify-center px-4 antialiased">
         <div role="alert" className="mx-auto max-w-md text-center">
           <h1 className="text-lg font-medium">Something went wrong</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <p className="text-muted-foreground mt-1 text-sm">
             An unexpected error occurred. Try again, or return to the dashboard.
           </p>
           <div className="mt-4 flex justify-center gap-2">
-            <Button type="button" onClick={retry}>Try again</Button>
+            <Button type="button" onClick={retry}>
+              Try again
+            </Button>
             <Button variant="outline" render={<Link href="/requests" />}>
               Back to dashboard
             </Button>
           </div>
           {process.env.NODE_ENV === 'development' && (
-            <pre className="mt-4 overflow-x-auto rounded bg-muted p-3 text-left text-xs">
+            <pre className="bg-muted mt-4 overflow-x-auto rounded p-3 text-left text-xs">
               {error.message}
             </pre>
           )}

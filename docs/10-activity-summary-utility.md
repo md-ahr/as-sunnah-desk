@@ -1,6 +1,6 @@
 # 10 · Activity Summary Utility
 
-> *Include a utility that summarizes a large activity dataset per assignee, returning total assigned, total resolved and average resolution time while handling incomplete/invalid records efficiently.*
+> _Include a utility that summarizes a large activity dataset per assignee, returning total assigned, total resolved and average resolution time while handling incomplete/invalid records efficiently._
 
 This is the "advanced JavaScript" requirement. The interesting words are **large**, **efficiently**, and **handling incomplete/invalid records** — a naive `filter().map().reduce()` chain satisfies the description and fails all three.
 
@@ -77,11 +77,11 @@ export type SummaryResult = {
 }
 
 export type SummarizeOptions = {
-  readonly resolvedStatuses?: readonly string[]   // default: ['resolved', 'closed']
+  readonly resolvedStatuses?: readonly string[] // default: ['resolved', 'closed']
   readonly now?: number
-  readonly maxRejectedSamples?: number            // default: 50
+  readonly maxRejectedSamples?: number // default: 50
   readonly sortBy?: 'totalAssigned' | 'totalResolved' | 'averageResolutionTimeMs'
-  readonly dedupeByRequestId?: boolean            // default: true
+  readonly dedupeByRequestId?: boolean // default: true
 }
 ```
 
@@ -104,7 +104,7 @@ type Accumulator = {
   totalAssigned: number
   totalResolved: number
   resolutionSum: number
-  sketch: P2Quantile          // bounded-memory median
+  sketch: P2Quantile // bounded-memory median
 }
 
 export function summarizeActivityByAssignee(
@@ -157,18 +157,18 @@ export function summarizeActivityByAssignee(
     }
   }
 
-  return { summaries: finalise(accumulators, options.sortBy), stats: { /* ... */ } }
+  return { summaries: finalise(accumulators, options.sortBy), stats: {/* ... */} }
 }
 ```
 
 ### Properties
 
-| Property | Value | Why |
-|---|---|---|
-| Time | **O(n)** | One pass. Every lookup is a `Map`/`Set` hash, so O(1) amortised |
-| Memory | **O(k)** in assignees, not records | Accumulators only. Nothing retains the input |
-| Allocations | One accumulator per assignee | No intermediate arrays, no closures in the hot loop |
-| Input | Any `Iterable` | Arrays, `Set`s, generators, database cursors |
+| Property    | Value                              | Why                                                             |
+| ----------- | ---------------------------------- | --------------------------------------------------------------- |
+| Time        | **O(n)**                           | One pass. Every lookup is a `Map`/`Set` hash, so O(1) amortised |
+| Memory      | **O(k)** in assignees, not records | Accumulators only. Nothing retains the input                    |
+| Allocations | One accumulator per assignee       | No intermediate arrays, no closures in the hot loop             |
+| Input       | Any `Iterable`                     | Arrays, `Set`s, generators, database cursors                    |
 
 `O(k)` memory rather than `O(n)` is the property that matters most. A per-assignee array of durations would grow with the dataset; the accumulator does not. 500,000 records across 200 assignees holds 200 small objects.
 
@@ -187,8 +187,12 @@ export class P2Quantile {
   #markers: number[] = []
   #positions: number[] = []
   // ...
-  accept(value: number): void { /* ... */ }
-  get estimate(): number | null { /* ... */ }
+  accept(value: number): void {
+    /* ... */
+  }
+  get estimate(): number | null {
+    /* ... */
+  }
 }
 ```
 
@@ -246,7 +250,7 @@ function toEpochMs(value: number | string | Date | null | undefined): number | n
   if (typeof value === 'number') return Number.isFinite(value) ? value : null
   if (value instanceof Date) {
     const ms = value.getTime()
-    return Number.isNaN(ms) ? null : ms          // Invalid Date
+    return Number.isNaN(ms) ? null : ms // Invalid Date
   }
   if (typeof value === 'string') {
     const ms = Date.parse(value)
@@ -321,36 +325,38 @@ The aggregation is expensive and identical for every user, which makes it the cl
 The UI surfaces the rejection statistics rather than hiding them:
 
 ```tsx
-{stats.rejected > 0 && (
-  <p role="status" className="text-sm text-muted-foreground">
-    {stats.accepted.toLocaleString()} of {stats.processed.toLocaleString()} activity
-    records were included. {stats.rejected.toLocaleString()} were skipped as incomplete.
-  </p>
-)}
+{
+  stats.rejected > 0 && (
+    <p role="status" className="text-muted-foreground text-sm">
+      {stats.accepted.toLocaleString()} of {stats.processed.toLocaleString()} activity records were
+      included. {stats.rejected.toLocaleString()} were skipped as incomplete.
+    </p>
+  )
+}
 ```
 
 A dashboard that silently drops 30% of its input and presents the rest as complete is worse than one that shows nothing, because it looks trustworthy. This is the visible payoff for tracking rejections rather than discarding them.
 
 ## Tests
 
-| Case | Assertion |
-|---|---|
-| Happy path | Known fixture produces hand-calculated totals and averages |
-| Empty input | `summaries: []`, all counters zero. No throw, no `NaN` |
-| No resolved records | `totalAssigned > 0`, `totalResolved: 0`, `averageResolutionTimeMs: null` |
-| Missing `assigneeId` | Rejected as `MISSING_ASSIGNEE`, counted, excluded |
-| `null`, `undefined`, `''` assignee | All rejected identically |
-| `Invalid Date` / unparseable string | Rejected as `INVALID_TIMESTAMP` |
-| `Infinity` timestamp | Rejected; never reaches arithmetic |
-| Resolved before assigned | Rejected as `NEGATIVE_DURATION` |
-| Duplicate `requestId` | Counted once; `DUPLICATE_RECORD` recorded |
-| Mixed timestamp formats | number, ISO string and `Date` for the same instant all agree |
-| All records invalid | `accepted: 0`, samples capped at `maxRejectedSamples` |
-| Timestamp formats | Epoch ms, ISO 8601, `Date` produce identical results |
-| Median vs exact | P² estimate within 2% of an exact median on a 10,000-value log-normal sample |
-| Generator input | Works with a generator; never materialises an array |
-| Async variant | Matches the sync variant exactly on the same data |
-| **100,000 records** | Completes under 250 ms; heap growth bounded by assignee count, not record count |
-| Sort options | Each `sortBy` orders correctly; ties are stable |
+| Case                                | Assertion                                                                       |
+| ----------------------------------- | ------------------------------------------------------------------------------- |
+| Happy path                          | Known fixture produces hand-calculated totals and averages                      |
+| Empty input                         | `summaries: []`, all counters zero. No throw, no `NaN`                          |
+| No resolved records                 | `totalAssigned > 0`, `totalResolved: 0`, `averageResolutionTimeMs: null`        |
+| Missing `assigneeId`                | Rejected as `MISSING_ASSIGNEE`, counted, excluded                               |
+| `null`, `undefined`, `''` assignee  | All rejected identically                                                        |
+| `Invalid Date` / unparseable string | Rejected as `INVALID_TIMESTAMP`                                                 |
+| `Infinity` timestamp                | Rejected; never reaches arithmetic                                              |
+| Resolved before assigned            | Rejected as `NEGATIVE_DURATION`                                                 |
+| Duplicate `requestId`               | Counted once; `DUPLICATE_RECORD` recorded                                       |
+| Mixed timestamp formats             | number, ISO string and `Date` for the same instant all agree                    |
+| All records invalid                 | `accepted: 0`, samples capped at `maxRejectedSamples`                           |
+| Timestamp formats                   | Epoch ms, ISO 8601, `Date` produce identical results                            |
+| Median vs exact                     | P² estimate within 2% of an exact median on a 10,000-value log-normal sample    |
+| Generator input                     | Works with a generator; never materialises an array                             |
+| Async variant                       | Matches the sync variant exactly on the same data                               |
+| **100,000 records**                 | Completes under 250 ms; heap growth bounded by assignee count, not record count |
+| Sort options                        | Each `sortBy` orders correctly; ties are stable                                 |
 
 The parity test between the sync and async variants is the one that guards against future drift, and the 100,000-record test is what turns "efficient" from an adjective into an assertion.

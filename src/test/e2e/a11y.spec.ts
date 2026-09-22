@@ -22,7 +22,9 @@ test.describe('accessibility', () => {
     await page.getByLabel('Password', { exact: true }).fill(ADMIN_ACCOUNT.password)
     await page.getByRole('button', { name: 'Sign in' }).click()
 
-    await expect(page.getByRole('heading', { level: 1, name: 'Assignee performance' })).toBeVisible()
+    await expect(
+      page.getByRole('heading', { level: 1, name: 'Assignee performance' }),
+    ).toBeVisible()
     await expect(page.locator('tbody tr').first()).toBeVisible()
 
     const results = await new AxeBuilder({ page }).disableRules(['color-contrast']).analyze()
@@ -55,6 +57,8 @@ test.describe('accessibility', () => {
     await expect(password).toBeFocused()
     await password.pressSequentially(ADMIN_ACCOUNT.password)
     await page.keyboard.press('Tab')
+    await expect(page.getByRole('button', { name: 'Show password' })).toBeFocused()
+    await page.keyboard.press('Tab')
     await expect(submit).toBeFocused()
     await page.keyboard.press('Enter')
 
@@ -63,9 +67,9 @@ test.describe('accessibility', () => {
     await waitForDashboardClients(page)
 
     for (let attempt = 0; attempt < 25; attempt += 1) {
-      const focused = await page.getByLabel('Search requests').evaluate(
-        (element) => element === document.activeElement,
-      )
+      const focused = await page
+        .getByLabel('Search requests')
+        .evaluate((element) => element === document.activeElement)
       if (focused) break
       await page.keyboard.press('Tab')
     }
@@ -77,7 +81,7 @@ test.describe('accessibility', () => {
     })
     await expect(row).toBeVisible()
 
-    const detailLink = row.getByRole('link').nth(1)
+    const detailLink = row.getByRole('link', { name: /View details for/ })
     await detailLink.focus()
     await page.keyboard.press('Enter')
 

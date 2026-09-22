@@ -22,13 +22,11 @@ describe('reference and user repositories', () => {
       id: 'user_admin',
       email: 'admin@assunnah.test',
       name: 'Admin User',
-      role: 'admin',
     })
     await insertUser(ctx.db, {
       id: 'user_viewer',
       email: 'viewer@assunnah.test',
       name: 'Viewer User',
-      role: 'viewer',
     })
     await insertSeedCategories(ctx.db)
   })
@@ -43,10 +41,10 @@ describe('reference and user repositories', () => {
     expect(categories.map((category) => category.slug)).toEqual(['it-support', 'general'])
   })
 
-  it('lists assignable users without viewers', async () => {
+  it('lists every active user as assignable', async () => {
     const assignable = await listAssignableUsers(ctx.db)
 
-    expect(assignable.map((user) => user.id)).toEqual(['user_admin'])
+    expect(assignable.map((user) => user.id)).toEqual(['user_admin', 'user_viewer'])
   })
 
   it('finds users by id and email without exposing extra columns', async () => {
@@ -55,11 +53,11 @@ describe('reference and user repositories', () => {
     const activeUser = await findActiveUserById('user_admin', ctx.db)
     const publicUser = await findPublicUserById('user_admin', ctx.db)
 
-    expect(byId).toMatchObject({ id: 'user_admin', role: 'admin', passwordHash: 'hashed-password' })
+    expect(byId).toMatchObject({ id: 'user_admin', passwordHash: 'hashed-password' })
     expect(byEmail?.id).toBe('user_admin')
-    expect(activeUser).toMatchObject({ id: 'user_admin', role: 'admin' })
+    expect(activeUser).toMatchObject({ id: 'user_admin' })
     expect(activeUser).not.toHaveProperty('passwordHash')
-    expect(publicUser).toMatchObject({ id: 'user_admin', role: 'admin' })
+    expect(publicUser).toMatchObject({ id: 'user_admin' })
     expect(publicUser).not.toHaveProperty('passwordHash')
   })
 })
@@ -69,7 +67,7 @@ describe('activity.repository integration', () => {
 
   beforeEach(async () => {
     ctx = await createTestDb()
-    await insertUser(ctx.db, { id: 'user_viewer', role: 'viewer', name: 'Viewer User' })
+    await insertUser(ctx.db, { id: 'user_viewer', name: 'Viewer User' })
     await insertSeedCategories(ctx.db)
     await insertRequest(ctx.db, {
       id: 'req_1',

@@ -6,14 +6,14 @@ The bundled docs are the authority. When something here disagrees with them, the
 
 ## Installed versions
 
-| Package | Version |
-|---|---|
-| `next` | 16.3.5 |
-| `react` / `react-dom` | 19.2.8 |
-| `babel-plugin-react-compiler` | 1.0.0 |
-| `tailwindcss` | 4.x |
-| Node.js minimum | 20.9.0 |
-| TypeScript minimum | 5.1.0 |
+| Package                       | Version |
+| ----------------------------- | ------- |
+| `next`                        | 16.3.5  |
+| `react` / `react-dom`         | 19.2.8  |
+| `babel-plugin-react-compiler` | 1.0.0   |
+| `tailwindcss`                 | 4.x     |
+| Node.js minimum               | 20.9.0  |
+| TypeScript minimum            | 5.1.0   |
 
 ## Breaking changes that affect this project
 
@@ -23,7 +23,9 @@ The bundled docs are the authority. When something here disagrees with them, the
 // src/proxy.ts   (inside src/ when using a src directory)
 import { NextResponse, type NextRequest } from 'next/server'
 
-export function proxy(request: NextRequest) { /* ... */ }
+export function proxy(request: NextRequest) {
+  /* ... */
+}
 
 export const config = { matcher: ['/((?!_next/static|favicon.ico).*)'] }
 ```
@@ -62,8 +64,8 @@ export async function GET(_req: NextRequest, ctx: RouteContext<'/api/requests/[i
 ### `revalidateTag` requires two arguments
 
 ```ts
-revalidateTag('posts')            // deprecated — raises a TypeScript error
-revalidateTag('posts', 'max')     // correct
+revalidateTag('posts') // deprecated — raises a TypeScript error
+revalidateTag('posts', 'max') // correct
 ```
 
 The second argument is a `cacheLife` profile, or `{ expire: N }`.
@@ -80,17 +82,17 @@ No `--turbopack` flag needed for `dev` or `build`. A custom `webpack` config now
 
 ### Other removals worth knowing
 
-| Removed | Replacement |
-|---|---|
-| `experimental.ppr`, `experimental_ppr` | `cacheComponents: true` |
-| `experimental.dynamicIO`, `experimental.useCache` | `cacheComponents: true` |
-| `unstable_cache` | `use cache` |
-| `unstable_noStore()` | `connection()` + `<Suspense>` |
-| `unstable_rootParams` | `next/root-params` |
-| `serverRuntimeConfig`, `publicRuntimeConfig` | Environment variables |
-| `next/legacy/image` | `next/image` |
-| `images.domains` | `images.remotePatterns` |
-| AMP support | — |
+| Removed                                           | Replacement                   |
+| ------------------------------------------------- | ----------------------------- |
+| `experimental.ppr`, `experimental_ppr`            | `cacheComponents: true`       |
+| `experimental.dynamicIO`, `experimental.useCache` | `cacheComponents: true`       |
+| `unstable_cache`                                  | `use cache`                   |
+| `unstable_noStore()`                              | `connection()` + `<Suspense>` |
+| `unstable_rootParams`                             | `next/root-params`            |
+| `serverRuntimeConfig`, `publicRuntimeConfig`      | Environment variables         |
+| `next/legacy/image`                               | `next/image`                  |
+| `images.domains`                                  | `images.remotePatterns`       |
+| AMP support                                       | —                             |
 
 Parallel route slots now require an explicit `default.js`, or the build fails.
 
@@ -100,11 +102,11 @@ Enabled with `cacheComponents: true`. This makes **Partial Prerendering the defa
 
 ### The three directives
 
-| Directive | Server storage | Scope | Can read cookies/headers? |
-|---|---|---|---|
-| `'use cache'` | In-memory or a cache handler | Shared across users | **No** — throws |
-| `'use cache: remote'` | Remote handler (Redis/KV) | Shared across users | **No** |
-| `'use cache: private'` | **None** | Per client, browser memory | **Yes** |
+| Directive              | Server storage               | Scope                      | Can read cookies/headers? |
+| ---------------------- | ---------------------------- | -------------------------- | ------------------------- |
+| `'use cache'`          | In-memory or a cache handler | Shared across users        | **No** — throws           |
+| `'use cache: remote'`  | Remote handler (Redis/KV)    | Shared across users        | **No**                    |
+| `'use cache: private'` | **None**                     | Per client, browser memory | **Yes**                   |
 
 `connection()` is prohibited inside all three.
 
@@ -116,15 +118,15 @@ Cache keys are composed from the build ID, a hash of the function's location and
 
 ### `cacheLife` profiles
 
-| Profile | `stale` | `revalidate` | `expire` |
-|---|---|---|---|
-| `default` | 5 min | 15 min | never |
-| `seconds` | 30 s | 1 s | 60 s |
-| `minutes` | 5 min | 1 min | 1 h |
-| `hours` | 5 min | 1 h | 1 day |
-| `days` | 5 min | 1 day | 1 week |
-| `weeks` | 5 min | 1 week | 30 days |
-| `max` | 5 min | 30 days | 1 year |
+| Profile   | `stale` | `revalidate` | `expire` |
+| --------- | ------- | ------------ | -------- |
+| `default` | 5 min   | 15 min       | never    |
+| `seconds` | 30 s    | 1 s          | 60 s     |
+| `minutes` | 5 min   | 1 min        | 1 h      |
+| `hours`   | 5 min   | 1 h          | 1 day    |
+| `days`    | 5 min   | 1 day        | 1 week   |
+| `weeks`   | 5 min   | 1 week       | 30 days  |
+| `max`     | 5 min   | 30 days      | 1 year   |
 
 Thresholds that cause silent behaviour changes:
 
@@ -146,12 +148,12 @@ Up to 128 tags per call, 256 characters each, case-sensitive, idempotent. Only v
 
 ### Invalidation
 
-| API | Callable from | Semantics |
-|---|---|---|
-| `updateTag(tag)` | **Server Actions only** | Expires immediately; next read waits for fresh data (read-your-writes) |
-| `revalidateTag(tag, profile)` | Actions + Route Handlers | Stale-while-revalidate |
-| `refresh()` | **Server Actions only** | Refreshes the client router |
-| `revalidatePath(path, type?)` | Actions + Route Handlers | Path-based; prefer tags |
+| API                           | Callable from            | Semantics                                                              |
+| ----------------------------- | ------------------------ | ---------------------------------------------------------------------- |
+| `updateTag(tag)`              | **Server Actions only**  | Expires immediately; next read waits for fresh data (read-your-writes) |
+| `revalidateTag(tag, profile)` | Actions + Route Handlers | Stale-while-revalidate                                                 |
+| `refresh()`                   | **Server Actions only**  | Refreshes the client router                                            |
+| `revalidatePath(path, type?)` | Actions + Route Handlers | Path-based; prefer tags                                                |
 
 Calling any of these from a Server Action clears the client cache immediately, bypassing stale windows.
 
@@ -162,8 +164,8 @@ Calling any of these from a Server Action clears the client cache immediately, b
 **These are new:**
 
 ```ts
-export const instant = false              // allow this segment to block; opts out of validation
-export const prefetch = 'partial'         // 'auto' | 'partial' | 'force-disabled'
+export const instant = false // allow this segment to block; opts out of validation
+export const prefetch = 'partial' // 'auto' | 'partial' | 'force-disabled'
 ```
 
 `instant = false` does **not** clear synchronous-IO build errors.
@@ -186,13 +188,13 @@ The fixes: wrap in `<Suspense>`, wrap in `use cache`, or call `connection()` fir
 
 ### File conventions
 
-| File | Notes |
-|---|---|
-| `error.tsx` | Must be `'use client'`. Props: `error`, `retry`, optional `reset` |
-| `global-error.tsx` | Must render its own `<html>` and `<body>` |
-| `not-found.tsx` | Rendered by `notFound()` |
-| `forbidden.tsx` / `unauthorized.tsx` | Require `experimental.authInterrupts: true` |
-| `global-not-found.js` | Requires `experimental.globalNotFound: true` |
+| File                                 | Notes                                                             |
+| ------------------------------------ | ----------------------------------------------------------------- |
+| `error.tsx`                          | Must be `'use client'`. Props: `error`, `retry`, optional `reset` |
+| `global-error.tsx`                   | Must render its own `<html>` and `<body>`                         |
+| `not-found.tsx`                      | Rendered by `notFound()`                                          |
+| `forbidden.tsx` / `unauthorized.tsx` | Require `experimental.authInterrupts: true`                       |
+| `global-not-found.js`                | Requires `experimental.globalNotFound: true`                      |
 
 `retry` is stable as of 16.3.0 (previously `unstable_retry`). It re-fetches and re-renders, where `reset` only clears the error.
 
@@ -203,7 +205,9 @@ Stable in 16.3.0, for component-level boundaries inside a page:
 ```tsx
 import { catchError, type ErrorInfo } from 'next/error'
 
-function Fallback(props: { title: string }, { error, retry }: ErrorInfo) { /* ... */ }
+function Fallback(props: { title: string }, { error, retry }: ErrorInfo) {
+  /* ... */
+}
 export default catchError(Fallback)
 ```
 
@@ -223,7 +227,9 @@ Terminology: a **Server Function** is any `'use server'` async function; a **Ser
 
 ```ts
 'use server'
-export async function updateStatus(input: unknown) { /* ... */ }
+export async function updateStatus(input: unknown) {
+  /* ... */
+}
 ```
 
 Automatic protections: `POST`-only, CSRF via `Origin`/`Host` comparison, encrypted non-deterministic action IDs, unused actions stripped from the client bundle, 1 MB body limit.
@@ -239,7 +245,7 @@ const [state, formAction, pending] = useActionState(action, initialState)
 // With useActionState the action's first parameter becomes the previous state:
 //   async function action(prevState, formData) {}
 
-const { pending } = useFormStatus()              // from react-dom, in a child of the form
+const { pending } = useFormStatus() // from react-dom, in a child of the form
 const [optimistic, setOptimistic] = useOptimistic(serverValue)
 ```
 
@@ -281,10 +287,10 @@ With `partialPrefetching: true` (16.3.0+, requires `cacheComponents`), the route
 
 ```ts
 const nextConfig: NextConfig = {
-  reactCompiler: true,        // stable in 16
-  cacheComponents: true,      // use cache + PPR
-  partialPrefetching: true,   // requires cacheComponents
-  typedRoutes: true,          // stable; was experimental.typedRoutes
+  reactCompiler: true, // stable in 16
+  cacheComponents: true, // use cache + PPR
+  partialPrefetching: true, // requires cacheComponents
+  typedRoutes: true, // stable; was experimental.typedRoutes
   experimental: {
     optimizePackageImports: ['lucide-react'],
   },

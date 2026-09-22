@@ -66,4 +66,23 @@ describe('search-params schema', () => {
     expect(hasActiveFilters(parseSearchParams({ q: 'desk' }))).toBe(true)
     expect(hasActiveFilters(parseSearchParams({ status: 'new' }))).toBe(true)
   })
+
+  it('keeps deep page numbers only when a cursor or an end seek is present', () => {
+    expect(parseSearchParams({ page: '25' }).page).toBe(1)
+    expect(parseSearchParams({ page: '25', cursor: 'abc' }).page).toBe(25)
+    expect(parseSearchParams({ page: '1200', seek: 'end' })).toMatchObject({
+      page: 1200,
+      seek: 'end',
+      cursor: undefined,
+    })
+  })
+
+  it('drops an end seek when filters change', () => {
+    const current = parseSearchParams({ seek: 'end', page: '1200', status: 'new' })
+    const next = withSearchParams(current, { status: ['in_progress'] })
+
+    expect(next.seek).toBeUndefined()
+    expect(next.page).toBe(1)
+    expect(next.cursor).toBeUndefined()
+  })
 })

@@ -7,7 +7,6 @@ import { redirect } from 'next/navigation'
 import { appError } from '@/lib/app-error'
 import { err, ok } from '@/lib/result'
 import type { Result } from '@/lib/result'
-import type { UserRole } from '@/server/db/schema'
 import { findActiveUserById } from '@/server/repositories/user.repository'
 
 import { getSession } from './session'
@@ -16,22 +15,15 @@ export type AuthenticatedUser = {
   readonly id: string
   readonly name: string
   readonly email: string
-  readonly role: UserRole
 }
 
 const getCachedActiveUser = cache(async (userId: string) => findActiveUserById(userId))
 
-function toAuthenticatedUser(user: {
-  id: string
-  name: string
-  email: string
-  role: UserRole
-}): AuthenticatedUser {
+function toAuthenticatedUser(user: { id: string; name: string; email: string }): AuthenticatedUser {
   return {
     id: user.id,
     name: user.name,
     email: user.email,
-    role: user.role,
   }
 }
 

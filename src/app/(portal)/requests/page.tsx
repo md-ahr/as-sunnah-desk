@@ -15,7 +15,7 @@ type RequestsPageProps = {
 export default function RequestsPage({ searchParams }: RequestsPageProps) {
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-semibold tracking-tight">Service requests</h1>
+      <h1 className="mb-2 text-2xl font-semibold tracking-tight">Service requests</h1>
       <Suspense fallback={<RequestTableSkeleton rows={10} />}>
         <RequestsDashboard searchParams={searchParams} />
       </Suspense>

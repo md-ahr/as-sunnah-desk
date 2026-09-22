@@ -29,7 +29,7 @@ export type FacetCountsDto = {
   readonly priority: Readonly<Partial<Record<RequestPriority, number>>>
   readonly category: Readonly<Record<string, number>>
   readonly assignee: Readonly<Record<string, number>>
-  readonly total: number | `${number}+`
+  readonly total: number
 }
 
 export type CategoryOption = {

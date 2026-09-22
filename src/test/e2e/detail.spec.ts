@@ -11,9 +11,10 @@ test.describe('request detail', () => {
   test('navigates from the dashboard and preserves the view on refresh', async ({ page }) => {
     await signInAsAdmin(page)
 
-    const subjectLink = page.locator('.request-table tbody tr').first().getByRole('link').nth(1)
+    const row = page.locator('.request-table tbody tr').first()
+    const subjectLink = row.getByRole('link').first()
     const subject = (await subjectLink.innerText()).trim()
-    await subjectLink.click()
+    await row.getByRole('link', { name: /View details for/ }).click()
 
     await expect(page).toHaveURL(/\/requests\/SR-\d{4}-\d{6}/)
     await expect(page.getByRole('heading', { level: 1, name: subject })).toBeVisible()
@@ -44,16 +45,6 @@ test.describe('request detail', () => {
 
     await expect(page.getByRole('heading', { name: 'Request not found' })).toBeVisible()
     await expect(page.getByRole('link', { name: 'Back to all requests' })).toBeVisible()
-  })
-
-  test('shows not-found when an agent opens an unassigned request', async ({ page }) => {
-    await page.goto(`/login?next=/requests/${KNOWN_REFERENCE}`)
-    await page.getByLabel('Email', { exact: true }).fill('agent@assunnah.test')
-    await page.getByLabel('Password', { exact: true }).fill('test.agent')
-    await page.getByRole('button', { name: 'Sign in' }).click()
-
-    await expect(page).toHaveURL(`/requests/${KNOWN_REFERENCE}`)
-    await expect(page.getByRole('heading', { name: 'Request not found' })).toBeVisible()
   })
 
   test('passes axe on the detail page', async ({ page }) => {

@@ -25,52 +25,49 @@ Open [http://localhost:3000](http://localhost:3000).
 
 ## Environment variables
 
-| Variable | Required | Default | Purpose |
-| --- | --- | --- | --- |
-| `DATABASE_URL` | No | `file:./data/app.db` | SQLite file path (relative to project root) |
-| `SESSION_PASSWORD` | **Yes** | — | iron-session seal password (minimum 32 characters) |
-| `NODE_ENV` | No | `development` | Set by Next.js; affects cookie `secure` flag |
+| Variable           | Required | Default              | Purpose                                            |
+| ------------------ | -------- | -------------------- | -------------------------------------------------- |
+| `DATABASE_URL`     | No       | `file:./data/app.db` | SQLite file path (relative to project root)        |
+| `SESSION_PASSWORD` | **Yes**  | —                    | iron-session seal password (minimum 32 characters) |
+| `NODE_ENV`         | No       | `development`        | Set by Next.js; affects cookie `secure` flag       |
 
 `.env` and `.env.local` are gitignored. Never commit real secrets.
 
 ## Test credentials
 
-Four seeded accounts — one per role. **Local development and E2E only.**
+One account is enough to review and update every request. **Local development and E2E only.**
 
-| Role | Email | Password |
-| --- | --- | --- |
-| admin | `admin@assunnah.test` | `test.admin` |
-| manager | `manager@assunnah.test` | `test.manager` |
-| agent | `agent@assunnah.test` | `test.agent` |
-| viewer | `viewer@assunnah.test` | `test.viewer` |
+| Email                 | Password     |
+| --------------------- | ------------ |
+| `admin@assunnah.test` | `test.admin` |
 
-Full capability matrix: [docs/15-local-setup.md](./docs/15-local-setup.md#seeded-test-accounts).
+Other seeded people are requesters and assignees. They can sign in as well, and they have the same access. There are no separate roles.
 
 ## Scripts
 
-| Command | Purpose |
-| --- | --- |
-| `pnpm dev` | Start the dev server |
-| `pnpm verify` | Full quality gate (types, lint, knip, unit, build, e2e) |
-| `pnpm test:run` | Unit and integration tests |
-| `pnpm test:e2e` | Playwright against production build |
-| `pnpm lint` | ESLint including architecture layer rules |
-| `pnpm typecheck` | `next typegen` + TypeScript |
-| `pnpm knip` | Unused dependency and orphan file check |
-| `pnpm db:migrate` | Apply pending migrations |
-| `pnpm db:seed` | Populate 12,000 requests + reference data |
-| `pnpm db:reset` | Delete database, migrate, and re-seed |
-| `pnpm db:studio` | Drizzle Studio browser UI |
+| Command           | Purpose                                                 |
+| ----------------- | ------------------------------------------------------- |
+| `pnpm dev`        | Start the dev server                                    |
+| `pnpm verify`     | Full quality gate (types, lint, knip, unit, build, e2e) |
+| `pnpm test:run`   | Unit and integration tests                              |
+| `pnpm test:e2e`   | Playwright against production build                     |
+| `pnpm lint`       | ESLint including architecture layer rules               |
+| `pnpm typecheck`  | `next typegen` + TypeScript                             |
+| `pnpm knip`       | Unused dependency and orphan file check                 |
+| `pnpm db:migrate` | Apply pending migrations                                |
+| `pnpm db:seed`    | Populate 12,000 requests + reference data               |
+| `pnpm db:reset`   | Delete database, migrate, and re-seed                   |
+| `pnpm db:studio`  | Drizzle Studio browser UI                               |
 
 ## Routes
 
-| Route | Auth | Purpose |
-| --- | --- | --- |
-| `/login` | Public | Login form |
-| `/requests` | Protected | Dashboard (default landing after login) |
+| Route            | Auth      | Purpose                                                             |
+| ---------------- | --------- | ------------------------------------------------------------------- |
+| `/login`         | Public    | Login form                                                          |
+| `/requests`      | Protected | Dashboard (default landing after login)                             |
 | `/requests/[id]` | Protected | Request detail + activity (reference in URL, e.g. `SR-2026-000142`) |
-| `/insights` | Protected | Per-assignee summary table |
-| `/api/health` | Public | Health check (`{ status: 'ok' }`) |
+| `/insights`      | Protected | Per-assignee summary table                                          |
+| `/api/health`    | Public    | Health check (`{ status: 'ok' }`)                                   |
 
 ## Troubleshooting
 

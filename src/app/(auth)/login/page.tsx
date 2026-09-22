@@ -1,10 +1,23 @@
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
 
+import { SiteLogo } from '@/components/site-logo'
 import { LoginForm } from '@/features/auth/components/login-form'
 
 export const metadata: Metadata = {
   title: 'Sign in · As-Sunnah Desk',
+}
+
+function LoginHeader() {
+  return (
+    <div className="flex flex-col items-center gap-4 text-center">
+      <SiteLogo linked={false} showName className="justify-center [&_img]:h-10" />
+      <div className="space-y-2">
+        <h1 className="text-2xl font-semibold tracking-tight">Sign in</h1>
+        <p className="text-muted-foreground text-sm">Service request management portal</p>
+      </div>
+    </div>
+  )
 }
 
 async function LoginContent({
@@ -17,10 +30,7 @@ async function LoginContent({
 
   return (
     <div className="space-y-6">
-      <div className="space-y-2 text-center">
-        <h1 className="text-2xl font-semibold tracking-tight">Sign in</h1>
-        <p className="text-sm text-muted-foreground">Service request management portal</p>
-      </div>
+      <LoginHeader />
       <LoginForm next={next} />
     </div>
   )
@@ -29,14 +39,11 @@ async function LoginContent({
 function LoginFallback() {
   return (
     <div className="space-y-6" aria-busy="true">
-      <div className="space-y-2 text-center">
-        <h1 className="text-2xl font-semibold tracking-tight">Sign in</h1>
-        <p className="text-sm text-muted-foreground">Service request management portal</p>
-      </div>
+      <LoginHeader />
       <div className="space-y-4">
-        <div className="h-16 animate-pulse rounded-md bg-muted" />
-        <div className="h-16 animate-pulse rounded-md bg-muted" />
-        <div className="h-10 animate-pulse rounded-md bg-muted" />
+        <div className="bg-muted h-16 animate-pulse rounded-md" />
+        <div className="bg-muted h-16 animate-pulse rounded-md" />
+        <div className="bg-muted h-10 animate-pulse rounded-md" />
       </div>
     </div>
   )

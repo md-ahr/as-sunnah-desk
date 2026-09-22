@@ -6,11 +6,7 @@ import { appError } from '@/lib/app-error'
 import { err, ok } from '@/lib/result'
 import type { Result } from '@/lib/result'
 import { verifyPasswordOrDummy } from '@/server/auth/password'
-import {
-  checkLoginAttempt,
-  clearLoginAttempts,
-  recordLoginFailure,
-} from '@/server/auth/rate-limit'
+import { checkLoginAttempt, clearLoginAttempts, recordLoginFailure } from '@/server/auth/rate-limit'
 import { createSession, deleteSession } from '@/server/auth/session'
 import { findUserByEmail } from '@/server/repositories/user.repository'
 
@@ -46,9 +42,7 @@ export async function loginWithCredentials(
   const rateCheck = checkLoginAttempt(limitKey)
 
   if (!rateCheck.allowed) {
-    return err(
-      appError('RATE_LIMITED', 'Too many sign-in attempts. Please wait and try again.'),
-    )
+    return err(appError('RATE_LIMITED', 'Too many sign-in attempts. Please wait and try again.'))
   }
 
   const user = await findUserByEmail(parsed.data.email)

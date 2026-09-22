@@ -38,6 +38,7 @@ export function ActiveFilterChip({ label, param, value }: ActiveFilterChipProps)
           }
           params.delete('cursor')
           params.delete('page')
+          params.delete('seek')
 
           startNavigation(() => {
             const query = params.toString()

@@ -111,9 +111,7 @@ export async function countActivitiesByRequestId(
 
 const ASSIGNMENT_STREAM_BATCH_SIZE = 1_000
 
-export async function* streamAssignmentActivity(
-  db: Db = getDb(),
-): AsyncGenerator<ActivityRecord> {
+export async function* streamAssignmentActivity(db: Db = getDb()): AsyncGenerator<ActivityRecord> {
   let cursor: string | null = null
 
   for (;;) {

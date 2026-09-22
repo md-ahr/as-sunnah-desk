@@ -4,7 +4,7 @@ import { and, eq, inArray, isNull, or, sql } from 'drizzle-orm'
 import type { SQL } from 'drizzle-orm'
 
 import { cursorFromRow, decodeCursor, encodeCursor } from '@/lib/search-params/cursor'
-import type { Cursor, SortKey } from '@/lib/search-params/cursor'
+import type { Cursor, CursorDirection, SortKey } from '@/lib/search-params/cursor'
 import type { AppDb, Db, DbExecutor } from '@/server/db/client'
 import { getDb } from '@/server/db/client'
 import { categories, serviceRequests, users } from '@/server/db/schema'
@@ -55,7 +55,9 @@ export type RequestDetail = RequestListItem & {
 export type PageResult<T> = {
   readonly items: readonly T[]
   readonly nextCursor: string | null
+  readonly previousCursor: string | null
   readonly hasNextPage: boolean
+  readonly hasPreviousPage: boolean
 }
 
 const assigneeUser = alias(users, 'assignee')
@@ -151,6 +153,21 @@ function buildWhereClause(
   return and(...predicates)
 }
 
+function encodeListCursor(sort: SortKey, row: ListRow, direction: CursorDirection): string {
+  return encodeCursor(
+    cursorFromRow(
+      sort,
+      {
+        id: row.id,
+        updatedAt: row.updatedAt,
+        createdAt: row.createdAt,
+        priorityRank: row.priorityRank,
+      },
+      direction,
+    ),
+  )
+}
+
 export async function listPaged(
   db: Db,
   filters: RequestFilters,
@@ -158,30 +175,26 @@ export async function listPaged(
   limit: number,
 ): Promise<PageResult<RequestListItem>> {
   const cursor = cursorToken ? decodeCursor(cursorToken) : null
+  const direction = cursor?.direction ?? 'next'
   const ftsIds = filters.query ? await ftsMatchIds(db, filters.query) : null
   const rows = await fetchListRows(db, filters, cursor, ftsIds, limit)
 
-  const hasNextPage = rows.length > limit
-  const pageRows = hasNextPage ? rows.slice(0, limit) : rows
+  const overflow = rows.length > limit
+  const window = overflow ? rows.slice(0, limit) : rows
+  const pageRows = direction === 'prev' ? [...window].reverse() : window
   const items = mapListRows(pageRows)
-
+  const hasNextPage = direction === 'prev' ? cursor !== null : overflow
+  const hasPreviousPage = direction === 'prev' ? overflow : cursor !== null
+  const firstRow = pageRows[0]
   const lastRow = pageRows.at(-1)
-  const nextCursor =
-    hasNextPage && lastRow
-      ? encodeCursor(
-          cursorFromRow(filters.sort, {
-            id: lastRow.id,
-            updatedAt: lastRow.updatedAt,
-            createdAt: lastRow.createdAt,
-            priorityRank: lastRow.priorityRank,
-          }),
-        )
-      : null
 
   return {
     items,
-    nextCursor,
+    nextCursor: hasNextPage && lastRow ? encodeListCursor(filters.sort, lastRow, 'next') : null,
+    previousCursor:
+      hasPreviousPage && firstRow ? encodeListCursor(filters.sort, firstRow, 'prev') : null,
     hasNextPage,
+    hasPreviousPage,
   }
 }
 
@@ -306,14 +319,12 @@ export async function getByReference(
   }
 }
 
-const COUNT_CAP = 1_000
-
 export type FacetCounts = {
   readonly status: Readonly<Partial<Record<RequestStatus, number>>>
   readonly priority: Readonly<Partial<Record<RequestPriority, number>>>
   readonly category: Readonly<Record<string, number>>
   readonly assignee: Readonly<Record<string, number>>
-  readonly total: number | `${number}+`
+  readonly total: number
 }
 
 function mapListRows(
@@ -385,9 +396,15 @@ async function fetchListRows(
   ftsIds: string[] | null,
   limit: number,
   offset = 0,
+  options?: {
+    readonly direction?: CursorDirection
+    readonly exact?: boolean
+  },
 ): Promise<ListRow[]> {
   const whereClause = buildWhereClause(filters, cursor, ftsIds)
-  const orderBy = buildSortOrder(filters.sort)
+  const direction = options?.direction ?? cursor?.direction ?? 'next'
+  const orderBy = buildSortOrder(filters.sort, direction)
+  const rowLimit = options?.exact ? limit : limit + 1
 
   return db
     .select({
@@ -416,7 +433,7 @@ async function fetchListRows(
     .where(whereClause)
     .orderBy(...orderBy)
     .offset(offset)
-    .limit(limit + 1)
+    .limit(rowLimit)
 }
 
 export async function listOffset(
@@ -433,40 +450,66 @@ export async function listOffset(
   const items = mapListRows(pageRows)
 
   const lastRow = pageRows.at(-1)
-  const nextCursor =
-    hasNextPage && lastRow
-      ? encodeCursor(
-          cursorFromRow(filters.sort, {
-            id: lastRow.id,
-            updatedAt: lastRow.updatedAt,
-            createdAt: lastRow.createdAt,
-            priorityRank: lastRow.priorityRank,
-          }),
-        )
-      : null
 
   return {
     items,
-    nextCursor,
+    nextCursor: hasNextPage && lastRow ? encodeListCursor(filters.sort, lastRow, 'next') : null,
+    previousCursor: null,
     hasNextPage,
+    hasPreviousPage: offset > 0,
   }
 }
 
-export async function countMatching(db: Db, filters: RequestFilters): Promise<number | `${number}+`> {
+const emptyPage: PageResult<RequestListItem> = {
+  items: [],
+  nextCursor: null,
+  previousCursor: null,
+  hasNextPage: false,
+  hasPreviousPage: false,
+}
+
+/** Last page via a reversed index seek. `total` sizes the remainder; it is not an offset. */
+export async function listFromEnd(
+  db: Db,
+  filters: RequestFilters,
+  limit: number,
+  total: number,
+): Promise<PageResult<RequestListItem>> {
+  if (total <= 0 || limit <= 0) {
+    return emptyPage
+  }
+
+  const lastPageSize = total % limit === 0 ? limit : total % limit
+  const ftsIds = filters.query ? await ftsMatchIds(db, filters.query) : null
+  const rows = await fetchListRows(db, filters, null, ftsIds, lastPageSize, 0, {
+    direction: 'prev',
+    exact: true,
+  })
+  const pageRows = [...rows].reverse()
+  const items = mapListRows(pageRows)
+  const firstRow = pageRows[0]
+  const hasPreviousPage = total > lastPageSize
+
+  return {
+    items,
+    nextCursor: null,
+    previousCursor:
+      hasPreviousPage && firstRow ? encodeListCursor(filters.sort, firstRow, 'prev') : null,
+    hasNextPage: false,
+    hasPreviousPage,
+  }
+}
+
+export async function countMatching(db: Db, filters: RequestFilters): Promise<number> {
   const ftsIds = filters.query ? await ftsMatchIds(db, filters.query) : null
   const whereClause = buildWhereClause(filters, null, ftsIds)
 
   const rows = await db
-    .select({ id: serviceRequests.id })
+    .select({ count: sql<number>`count(*)`.mapWith(Number) })
     .from(serviceRequests)
     .where(whereClause)
-    .limit(COUNT_CAP + 1)
 
-  if (rows.length > COUNT_CAP) {
-    return `${String(COUNT_CAP)}+` as `${number}+`
-  }
-
-  return rows.length
+  return rows[0]?.count ?? 0
 }
 
 export async function getFacetCounts(db: Db, scope: RequestFilters): Promise<FacetCounts> {
@@ -551,9 +594,13 @@ export async function getFacetCounts(db: Db, scope: RequestFilters): Promise<Fac
   return { status, priority, category, assignee, total }
 }
 
-export async function explainListQueryPlan(db: Db, filters: RequestFilters): Promise<string> {
+export async function explainListQueryPlan(
+  db: Db,
+  filters: RequestFilters,
+  direction: CursorDirection = 'next',
+): Promise<string> {
   const whereClause = buildWhereClause(filters, null, null)
-  const orderBy = buildSortOrder(filters.sort)
+  const orderBy = buildSortOrder(filters.sort, direction)
   const built = db
     .select({ id: serviceRequests.id })
     .from(serviceRequests)

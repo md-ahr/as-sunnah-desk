@@ -10,9 +10,7 @@ describe('password helpers', () => {
   })
 
   it('verifies against a dummy hash when no user hash is provided', async () => {
-    expect(await verifyPasswordOrDummy('timing-safe-dummy-password-not-for-login', null)).toBe(
-      true,
-    )
+    expect(await verifyPasswordOrDummy('timing-safe-dummy-password-not-for-login', null)).toBe(true)
     expect(await verifyPasswordOrDummy('not-the-dummy-password', null)).toBe(false)
   })
 })

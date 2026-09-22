@@ -3,14 +3,10 @@ import Link from 'next/link'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { toRoute } from '@/lib/routes'
 import { PriorityBadge } from '@/features/requests/components/priority-badge'
+import { RequestDetailLink } from '@/features/requests/components/request-detail-link'
 import { RowStatusControl } from '@/features/requests/components/row-status-control'
 import { formatAbsoluteTime, formatRelativeTime, initials } from '@/features/requests/lib/labels'
-import { columnMobileHiddenProps, REQUEST_COLUMNS } from '@/features/requests/request-columns'
 import type { RequestListItemDto } from '@/features/requests/types'
-
-const MOBILE_HIDDEN = new Map(
-  REQUEST_COLUMNS.map((column) => [column.id, columnMobileHiddenProps(column)]),
-)
 
 type RequestRowProps = {
   row: RequestListItemDto
@@ -21,27 +17,30 @@ type RequestRowProps = {
 export function RequestRow({ row, canEditStatus, now }: RequestRowProps) {
   const updatedLabel = formatRelativeTime(row.updatedAt, now)
   const updatedAbsolute = formatAbsoluteTime(row.updatedAt)
+  const detailHref = toRoute(`/requests/${row.reference}`)
 
   return (
-    <tr className="request-table-row border-border border-t">
-      <th scope="row" className="px-4 py-3 text-left font-medium" data-label="ID">
-        <Link href={toRoute(`/requests/${row.reference}`)} className="text-primary hover:underline">
-          {row.reference}
-        </Link>
+    <tr className="request-table-row border-border hover:bg-muted/50 border-b align-middle last:border-b-0">
+      <th
+        scope="row"
+        className="overflow-hidden px-4 py-3 text-left align-middle font-medium"
+        data-label="ID"
+      >
+        <span className="text-foreground font-mono text-xs tabular-nums">{row.reference}</span>
       </th>
-      <td className="px-4 py-3" data-label="Subject">
+      <td className="overflow-hidden px-4 py-3 align-middle" data-label="Subject">
         <Link
-          href={toRoute(`/requests/${row.reference}`)}
+          href={detailHref}
           prefetch={true}
-          className="line-clamp-2 hover:underline"
+          className="text-primary block truncate text-sm font-medium hover:underline"
           title={row.subject}
         >
           {row.subject}
         </Link>
       </td>
-      <td className="px-4 py-3" data-label="Requester" {...MOBILE_HIDDEN.get('requester')}>
+      <td className="overflow-hidden px-4 py-3 align-middle" data-label="Requester">
         <div className="flex items-center gap-2">
-          <Avatar className="size-7">
+          <Avatar className="size-7 shrink-0">
             <AvatarFallback className="text-[10px]">{initials(row.requester.name)}</AvatarFallback>
           </Avatar>
           <div className="min-w-0">
@@ -50,27 +49,45 @@ export function RequestRow({ row, canEditStatus, now }: RequestRowProps) {
           </div>
         </div>
       </td>
-      <td className="px-4 py-3 text-sm" data-label="Category" {...MOBILE_HIDDEN.get('category')}>
+      <td
+        className="overflow-hidden px-4 py-3 align-middle text-sm whitespace-nowrap"
+        data-label="Category"
+      >
         {row.category.name}
       </td>
-      <td className="px-4 py-3" data-label="Priority">
-        <PriorityBadge priority={row.priority} />
+      <td className="px-4 py-3 align-middle whitespace-nowrap" data-label="Priority">
+        <div className="request-table-inline-value">
+          <PriorityBadge priority={row.priority} />
+        </div>
       </td>
-      <td className="px-4 py-3" data-label="Status">
-        <RowStatusControl
-          requestId={row.id}
-          status={row.status}
-          version={row.version}
-          canEdit={canEditStatus}
-        />
+      <td className="px-4 py-3 align-middle whitespace-nowrap" data-label="Status">
+        <div className="request-table-inline-value">
+          <RowStatusControl
+            requestId={row.id}
+            status={row.status}
+            version={row.version}
+            canEdit={canEditStatus}
+          />
+        </div>
       </td>
-      <td className="px-4 py-3 text-sm" data-label="Assignee" {...MOBILE_HIDDEN.get('assignee')}>
-        {row.assignee?.name ?? 'Unassigned'}
+      <td
+        className="overflow-hidden px-4 py-3 align-middle text-sm whitespace-nowrap"
+        data-label="Assignee"
+      >
+        <span className={row.assignee ? 'block truncate' : 'text-muted-foreground block truncate'}>
+          {row.assignee?.name ?? 'Unassigned'}
+        </span>
       </td>
-      <td className="px-4 py-3 text-sm whitespace-nowrap" data-label="Last updated">
+      <td
+        className="text-muted-foreground px-4 py-3 align-middle text-sm whitespace-nowrap tabular-nums"
+        data-label="Last updated"
+      >
         <time dateTime={row.updatedAt.toISOString()} title={updatedAbsolute}>
           {updatedLabel}
         </time>
+      </td>
+      <td className="px-2 py-3 text-right align-middle whitespace-nowrap" data-label="View">
+        <RequestDetailLink reference={row.reference} subject={row.subject} />
       </td>
     </tr>
   )

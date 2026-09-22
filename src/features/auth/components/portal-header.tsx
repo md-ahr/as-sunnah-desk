@@ -7,14 +7,15 @@ export async function PortalHeader() {
   const user = await getCurrentUser()
 
   return (
-    <header className="border-b border-border bg-card">
-      <div className="mx-auto flex h-14 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
-        <div className="flex min-w-0 flex-1 items-center gap-4 sm:gap-6">
+    <header className="border-border bg-card sticky top-0 z-10 border-b">
+      <div className="mx-auto grid h-14 max-w-[90rem] grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center px-4 sm:px-6 lg:px-8">
+        <div className="min-w-0 justify-self-start">
           <SiteLogo />
-          <div aria-hidden="true" className="hidden h-6 w-px shrink-0 bg-border sm:block" />
-          <PortalNav />
         </div>
-        <UserMenu user={user} />
+        <PortalNav />
+        <div className="min-w-0 justify-self-end">
+          <UserMenu user={user} />
+        </div>
       </div>
     </header>
   )

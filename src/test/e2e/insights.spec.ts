@@ -9,7 +9,9 @@ test.describe('insights', () => {
     await signInAsAdmin(page)
     await page.goto('/insights')
 
-    await expect(page.getByRole('heading', { level: 1, name: 'Assignee performance' })).toBeVisible()
+    await expect(
+      page.getByRole('heading', { level: 1, name: 'Assignee performance' }),
+    ).toBeVisible()
     await expect(page.getByRole('columnheader', { name: 'Assignee' })).toBeVisible()
     await expect(page.getByRole('columnheader', { name: 'Resolved' })).toBeVisible()
 

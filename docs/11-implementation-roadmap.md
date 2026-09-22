@@ -15,13 +15,13 @@ Every phase begins the same way. Do not skip the read step — the docs are the 
 this roadmap is the schedule.
 
 1. **Read this phase's "Before you start" table** — docs, rules, and skills in the
-  order listed.
+   order listed.
 2. **Confirm upstream phases are done** — check the previous phase's **Done when**
-  checklist, not just "mostly there".
+   checklist, not just "mostly there".
 3. **Work sub-tasks in order** — later tasks assume earlier ones exist. Do not jump to
-  UI before the repository layer is proven.
+   UI before the repository layer is proven.
 4. **Stay inside the layer hierarchy** — routes → features → services → repositories
-  → database. If you need a query, add it to a repository, not a page.
+   → database. If you need a query, add it to a repository, not a page.
 5. **Run the phase exit gate** before opening the next phase.
 
 When an agent starts a session (e.g. "execute Phase 1"), it should announce which docs
@@ -29,14 +29,11 @@ and rules it read, then proceed task-by-task.
 
 ---
 
-
-
 ## Requirements → phase map
 
 Each brief requirement from [01 · Requirements traceability](./01-requirements-traceability.md)
 lands in exactly one primary phase. Later phases may add tests or polish, but not the
 first implementation.
-
 
 | Req | Brief topic                                | Primary phase                                                              | Proof (tests / checks)                                                    |
 | --- | ------------------------------------------ | -------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
@@ -51,16 +48,12 @@ first implementation.
 | 4   | Request details                            | **4**                                                                      | `detail.spec.ts` — direct URL, refresh, activity, not-found               |
 | 5   | Update workflow                            | **5**                                                                      | Status machine N×N; idempotency + conflict E2E                            |
 | 9   | Advanced JavaScript utility                | **6**                                                                      | `lib/summarize-activity/` unit suite incl. 100k test                      |
-| —   | Role-scoped access                         | **2** (permissions), **5** (enforcement in writes)                         | `access-control.spec.ts`                                                  |
 | —   | Deliverables (README, technical note)      | **7**                                                                      | [12](./12-technical-note.md), [15](./15-local-setup.md)                   |
-
 
 **Out of scope** (do not add during any phase): request creation, real-time push,
 multi-tenancy, i18n — [01 § intentionally does not cover](./01-requirements-traceability.md#requirements-this-design-intentionally-does-not-cover).
 
 ---
-
-
 
 ## Layer build order (within every feature phase)
 
@@ -75,8 +68,6 @@ No inline queries. No business logic in `page.tsx`.
 
 ---
 
-
-
 ## Phase 0 · Foundation
 
 **Goal:** a project that builds, lints, typechecks, formats, and enforces its own
@@ -88,7 +79,6 @@ is cheaper than retrofitting them after five phases of feature work.
 
 ### Before you start
 
-
 | Read first                                                                                  | Why                                       |
 | ------------------------------------------------------------------------------------------- | ----------------------------------------- |
 | [02 · Tech stack decisions](./02-tech-stack-decisions.md)                                   | Dependency budget, rejected alternatives  |
@@ -98,14 +88,11 @@ is cheaper than retrofitting them after five phases of feature work.
 | [13 · Next.js 16 reference](./13-nextjs-16-reference.md)                                    | Version-specific API facts                |
 | [14 · UI component plan](./14-ui-component-plan.md#required-core-deliverable)               | shadcn init + required primitives         |
 
-
-
 | Cursor rules                                 | Skills (when relevant)                      |
 | -------------------------------------------- | ------------------------------------------- |
 | `.cursor/rules/00-project.mdc` (create)      | `nextjs-best-practices`, `coding-standards` |
 | `.cursor/rules/01-architecture.mdc` (create) | `new-repo` (if bootstrapping from scratch)  |
 | `.cursor/rules/04-testing.mdc` (create)      | `vitest`, `playwright-skill`                |
-
 
 Also read `AGENTS.md` and `node_modules/next/dist/docs/` before writing Next.js config.
 
@@ -136,13 +123,10 @@ Also read `AGENTS.md` and `node_modules/next/dist/docs/` before writing Next.js 
   `typecheck`, `knip`, `test`, `test:run`, `test:e2e`, `db:*`, `verify`
   ```
 
-
-
 ### 0.2 · Agent context (token-optimised Cursor rules)
 
 Keep rules **short, scoped, and link to** `docs/` for detail. One concern per file;
 target under ~50 lines each so agent context stays cheap.
-
 
 | File                                  | Scope                                                | Purpose                                                                                                                |
 | ------------------------------------- | ---------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
@@ -152,7 +136,6 @@ target under ~50 lines each so agent context stays cheap.
 | `.cursor/rules/03-server-actions.mdc` | `src/features/**/actions/**`                         | Four-step preamble; return `Result` not throw; idempotency + version checks                                            |
 | `.cursor/rules/04-testing.mdc`        | `**/*.{test,spec}.{ts,tsx}`, `src/test/e2e/**`       | Unit for pure logic; integration against real SQLite; Playwright for async RSC — see [09](./09-testing-strategy.md)    |
 | `.cursor/rules/05-ui-a11y.mdc`        | `src/components/**`, `src/features/**/components/**` | Semantic HTML, keyboard, no colour-only status; shadcn Base UI `render` not `asChild`                                  |
-
 
 - [x] Create the rule files above; extend `AGENTS.md` with a short **project** block
   ```
@@ -194,8 +177,6 @@ owns formatting; ESLint owns correctness.
   `@/server/repositories`
   ```
 
-
-
 ### 0.4 · Prettier, EditorConfig, and VS Code
 
 - [x] `prettier.config.mjs` — `singleQuote`, `semi: false`, `trailingComma: 'all'`,
@@ -214,19 +195,15 @@ owns formatting; ESLint owns correctness.
   EditorConfig
   ```
 
-
-
 ### 0.5 · Git hooks (Lefthook)
 
 Use **Lefthook** (not Husky) — fast, YAML-configured, no `npx` shim per hook.
-
 
 | Hook           | Commands                           | Rationale                                       |
 | -------------- | ---------------------------------- | ----------------------------------------------- |
 | **pre-commit** | `lint-staged`                      | Fast; only touches staged files                 |
 | **pre-push**   | `pnpm typecheck` + `pnpm test:run` | Catches type and unit regressions before remote |
-| **commit-msg** | *(optional)* `commitlint`          | Skip unless you want conventional commits       |
-
+| **commit-msg** | _(optional)_ `commitlint`          | Skip unless you want conventional commits       |
 
 - [x] `lefthook install` documented in README setup
 - [x] `.github/workflows/verify.yml` — runs `pnpm verify` on push/PR
@@ -237,8 +214,6 @@ Use **Lefthook** (not Husky) — fast, YAML-configured, no `npx` shim per hook.
   ```
   `test:e2e` — full gate in CI and before submission; **not** on every commit
   ```
-
-
 
 ### 0.6 · TypeScript (strict compiler options)
 
@@ -251,15 +226,11 @@ Use **Lefthook** (not Husky) — fast, YAML-configured, no `npx` shim per hook.
   `src/features/**/actions/**` only
   ```
 
-
-
 ### 0.7 · Dead code and dependency hygiene (Knip)
 
 - [x] `knip` + `knip.json` — Next.js plugin, explicit entry points for scripts and configs
 - [x] `ignore`: `src/components/ui/**`, `.next/**`, `drizzle/meta/**`
 - [x] Include `pnpm knip` in `pnpm verify` after `lint`, before `test:run`
-
-
 
 ### 0.8 · Repository hygiene
 
@@ -272,8 +243,6 @@ Use **Lefthook** (not Husky) — fast, YAML-configured, no `npx` shim per hook.
   `db:seed`, test credentials, `pnpm verify`
   ```
 
-
-
 ### Done when
 
 - [x] `pnpm verify` passes on an empty application
@@ -283,8 +252,6 @@ Use **Lefthook** (not Husky) — fast, YAML-configured, no `npx` shim per hook.
 
 ---
 
-
-
 ## Phase 1 · Data layer
 
 **Goal:** a seeded 12,000-row database with queries proven to use indexes.
@@ -292,7 +259,6 @@ Use **Lefthook** (not Husky) — fast, YAML-configured, no `npx` shim per hook.
 **Requirements:** data model & scale foundation for Req 2–5, 7 (see [01 §7](./01-requirements-traceability.md#7-performance--scale)).
 
 ### Before you start
-
 
 | Read first                                                                                             | Why                          |
 | ------------------------------------------------------------------------------------------------------ | ---------------------------- |
@@ -302,12 +268,9 @@ Use **Lefthook** (not Husky) — fast, YAML-configured, no `npx` shim per hook.
 | [16 · Test guidelines](./16-test-guidelines.md#layer-2--integration-tests)                             | Factories, isolation, AAA    |
 | [15 · Local setup](./15-local-setup.md#database-scripts)                                               | `db:migrate`, `db:seed`      |
 
-
-
 | Cursor rules          | Skills                              |
 | --------------------- | ----------------------------------- |
 | `01-architecture.mdc` | `vitest`, `test-driven-development` |
-
 
 Do **not** read UI or rendering docs yet — no routes in this phase.
 
@@ -318,22 +281,16 @@ Do **not** read UI or rendering docs yet — no routes in this phase.
 - [x] FTS5 virtual table + sync triggers as a separate migration
 - [x] `src/server/db/types.ts` — inferred row / insert types exported for repositories
 
-
-
 ### 1.2 · Database client
 
 - [x] `src/server/db/client.ts` — libSQL + Drizzle singleton (module-scoped; survives HMR)
 - [x] Import `'server-only'`; no client or route imports
-
-
 
 ### 1.3 · Seed
 
 - [x] `src/server/db/seed.ts` — deterministic, batched in one transaction, realistic distributions
 - [x] `package.json` scripts: `db:generate`, `db:migrate`, `db:seed`, `db:reset`
 - [x] Target: 12,000 `service_requests`, ~48,000 activity rows, four credentialed users
-
-
 
 ### 1.4 · Repositories (read paths only)
 
@@ -353,16 +310,12 @@ Each repository: explicit return types, selected columns only, no password hashe
 - [x] Whitelisted sort map in repository or `src/lib/search-params/` (full URL contract lands in Phase 3)
 - [x] Predicate builder for `(sort_key, id)` tuple comparison
 
-
-
 ### 1.6 · Integration tests
 
 - [x] Test factories in `src/test/factories/` per [16 § factories](./16-test-guidelines.md#layer-2--integration-tests)
 - [x] 12,000-row keyset pagination — no gaps, no duplicates under concurrent insert simulation
 - [x] `EXPLAIN QUERY PLAN` assertion — list query must not `SCAN service_requests`
 - [x] FTS search returns expected matches (or document LIKE fallback)
-
-
 
 ### Done when
 
@@ -375,8 +328,6 @@ function and revisit — the interface does not change.
 
 ---
 
-
-
 ## Phase 2 · Authentication
 
 **Goal:** working login / logout with the Data Access Layer in place.
@@ -385,7 +336,6 @@ function and revisit — the interface does not change.
 role capabilities used from Phase 3 onward.
 
 ### Before you start
-
 
 | Read first                                                                                   | Why                       |
 | -------------------------------------------------------------------------------------------- | ------------------------- |
@@ -396,12 +346,9 @@ role capabilities used from Phase 3 onward.
 | [05 · Rendering](./05-rendering-and-caching.md) — `use cache: private`                       | First private cache usage |
 | [13 · Next.js 16 reference](./13-nextjs-16-reference.md) — `proxy.ts`                        | Replaces middleware       |
 
-
-
 | Cursor rules                                   | Skills                                                                  |
 | ---------------------------------------------- | ----------------------------------------------------------------------- |
 | `01-architecture.mdc`, `03-server-actions.mdc` | `nextjs-app-router-patterns`, `react-hook-form-zod` (Zod only — no RHF) |
-
 
 Depends on Phase 1: `user.repository.ts`, seeded accounts.
 
@@ -414,36 +361,27 @@ Depends on Phase 1: `user.repository.ts`, seeded accounts.
 - [x] `src/server/auth/password.ts` — argon2 hash and verify
 - [x] Constant-time dummy-hash path for unknown emails ([06 § login](./06-auth-and-security.md))
 
-
-
 ### 2.2 · Data Access Layer and permissions
 
 - [x] `src/server/auth/dal.ts` — `getCurrentUser()` with `use cache: private`;
   ```
   `requireUser()` returning `Result`
   ```
-- [x] `src/server/auth/permissions.ts` — capability map by role (agent, admin, viewer, …)
 - [x] Wire DAL into repository calls — services come in Phase 3; prove DAL with a minimal
   ```
   integration test against `user.repository`
   ```
-
-
 
 ### 2.3 · Rate limiting
 
 - [x] `src/server/auth/rate-limit.ts` — in-memory sliding window keyed on IP + email
 - [x] Unit test: sixth rapid failure is blocked
 
-
-
 ### 2.4 · Server Actions
 
 - [x] `src/lib/auth/credentials.ts` — Zod schema (pure `lib/`; consumed by `auth.service`)
 - [x] `src/features/auth/actions/login.ts` — validate via service; return `Result` errors
 - [x] `src/features/auth/actions/logout.ts` — clear cookie, redirect
-
-
 
 ### 2.5 · Routes, proxy, and login UI
 
@@ -459,15 +397,11 @@ Depends on Phase 1: `user.repository.ts`, seeded accounts.
 - [x] `ToasterHost` in root layout if not done in Phase 0
 - [x] Four seeded accounts documented in README ([15 § test accounts](./15-local-setup.md#seeded-test-accounts))
 
-
-
 ### 2.6 · Tests
 
 - [x] Unit: rate limiter, password verify, permissions map
 - [x] Integration: login success / failure, session seal round-trip
 - [x] E2E scaffold: `src/test/e2e/auth.spec.ts` — sign in, sign out, protected redirect
-
-
 
 ### Done when
 
@@ -477,8 +411,6 @@ Depends on Phase 1: `user.repository.ts`, seeded accounts.
 - [x] Dev overlay clean after first `use cache: private` usage
 
 ---
-
-
 
 ## Phase 3 · Dashboard
 
@@ -492,7 +424,6 @@ Depends on Phase 1: `user.repository.ts`, seeded accounts.
 
 ### Before you start
 
-
 | Read first                                                                                    | Why                           |
 | --------------------------------------------------------------------------------------------- | ----------------------------- |
 | [05 · Rendering and caching](./05-rendering-and-caching.md) — page composition, Suspense, PPR | Dashboard structure           |
@@ -503,12 +434,9 @@ Depends on Phase 1: `user.repository.ts`, seeded accounts.
 | [17 · UI design guidelines](./17-ui-design-guidelines.md) — tokens, blocks, checklist         | Visual consistency            |
 | [01 · Requirements](./01-requirements-traceability.md#2-request-dashboard)                    | Column definitions            |
 
-
-
 | Cursor rules                          | Skills                                                                                              |
 | ------------------------------------- | --------------------------------------------------------------------------------------------------- |
 | `02-nextjs-rsc.mdc`, `05-ui-a11y.mdc` | `nextjs-app-router-patterns`, `shadcn-ui`, `tailwind-v4-shadcn`, `accessibility`, `frontend-design` |
-
 
 Depends on Phase 1 (repositories, pagination) and Phase 2 (DAL, session).
 
@@ -521,8 +449,6 @@ Depends on Phase 1 (repositories, pagination) and Phase 2 (DAL, session).
 - [x] Slug → id resolution for category filter
 - [x] Facet counts query (cached in 3.6)
 
-
-
 ### 3.2 · URL contract
 
 - [x] `src/lib/search-params/schema.ts` — Zod URL contract (search, filters, sort, cursor, perPage)
@@ -530,15 +456,11 @@ Depends on Phase 1 (repositories, pagination) and Phase 2 (DAL, session).
 - [x] `parse`, `serialise`, cursor helpers
 - [x] Unit tests: invalid values fall back to defaults; round-trip serialisation
 
-
-
 ### 3.3 · Portal shell
 
 - [x] `src/app/(portal)/layout.tsx` — app shell; session read inside Suspense-wrapped header
 - [x] `PortalHeader`, `PortalNav`, `UserMenu`, `SkipLink`
 - [x] `<main id="main">` landmark; no top-level `await`
-
-
 
 ### 3.4 · Dashboard route and table
 
@@ -547,8 +469,6 @@ Depends on Phase 1 (repositories, pagination) and Phase 2 (DAL, session).
 - [x] `RequestTable`, `RequestRow` — Server Components; semantic `<table>`
 - [x] `RequestTableSkeleton` — matching row geometry
 - [x] `StatusBadge`, `PriorityBadge` — read-only until Phase 5
-
-
 
 ### 3.5 · Search, filters, and pagination (client islands)
 
@@ -562,15 +482,11 @@ Depends on Phase 1 (repositories, pagination) and Phase 2 (DAL, session).
 - [x] `Pagination` — anchor links only (Server Component)
 - [x] `SortLink` in column headers — `aria-sort`
 
-
-
 ### 3.6 · Cached reference data
 
 - [x] `src/server/cache/tags.ts` — centralised tag names
 - [x] `FacetCounts` — `use cache` + `cacheTag`; categories / assignable users similarly if needed
 - [x] `ResultsLiveRegion` — announces result count changes
-
-
 
 ### 3.7 · Application states (dashboard segment)
 
@@ -578,15 +494,11 @@ Depends on Phase 1 (repositories, pagination) and Phase 2 (DAL, session).
 - [x] `src/app/(portal)/requests/loading.tsx` — skeleton via `RequestTableSkeleton`
 - [x] `src/app/(portal)/requests/error.tsx` — `retry()` Client boundary
 
-
-
 ### 3.8 · Responsive layout and accessibility
 
 - [x] CSS: table → cards at mobile breakpoint; `data-label` pseudo-elements
 - [x] `<caption>`, `scope`, keyboard-operable filter sheet
 - [x] Component tests with `jest-axe` on `EmptyState`, filter bar
-
-
 
 ### 3.9 · Tests
 
@@ -594,14 +506,10 @@ Depends on Phase 1 (repositories, pagination) and Phase 2 (DAL, session).
 - [x] E2E: `dashboard.spec.ts`, `search.spec.ts`, `filters.spec.ts`, `pagination.spec.ts`
 - [x] `@axe-core/playwright` on dashboard load
 
-
-
 ### 3.10 · Build checkpoint (do not skip)
 
 - [x] Run `pnpm build`; confirm `/requests` reports a static shell + streaming boundaries
 - [x] If not static, fix misplaced `cookies()` / `headers()` before Phase 4
-
-
 
 ### Done when
 
@@ -613,8 +521,6 @@ Depends on Phase 1 (repositories, pagination) and Phase 2 (DAL, session).
 
 ---
 
-
-
 ## Phase 4 · Request detail
 
 **Goal:** detail page with activity history; direct URL and refresh work.
@@ -624,7 +530,6 @@ Depends on Phase 1 (repositories, pagination) and Phase 2 (DAL, session).
 
 ### Before you start
 
-
 | Read first                                                                                           | Why                                |
 | ---------------------------------------------------------------------------------------------------- | ---------------------------------- |
 | [01 §4](./01-requirements-traceability.md#4-request-details)                                         | Reference in URL, not UUID         |
@@ -633,12 +538,9 @@ Depends on Phase 1 (repositories, pagination) and Phase 2 (DAL, session).
 | [14 · UI component plan](./14-ui-component-plan.md#request-detail-phase-4)                           | Panel + timeline components        |
 | [17 · UI design guidelines](./17-ui-design-guidelines.md#5--component-composition-predefined-blocks) | Detail block layout                |
 
-
-
 | Cursor rules                          | Skills                       |
 | ------------------------------------- | ---------------------------- |
 | `02-nextjs-rsc.mdc`, `05-ui-a11y.mdc` | `nextjs-app-router-patterns` |
-
 
 Depends on Phase 3 (request service, auth scoping).
 
@@ -647,15 +549,11 @@ Depends on Phase 3 (request service, auth scoping).
 - [x] `request.service.ts` — `getByReference(reference, user)` with scope check
 - [x] `activity.repository.ts` — `listByRequestId` (if not complete in Phase 1)
 
-
-
 ### 4.2 · Detail route
 
 - [x] `src/app/(portal)/requests/[id]/page.tsx` — `PageProps<'/requests/[id]'>`
 - [x] `notFound()` for unknown reference and out-of-scope reference
 - [x] `prefetch={true}` on subject link in dashboard list
-
-
 
 ### 4.3 · Detail UI (read-only controls)
 
@@ -666,26 +564,18 @@ Depends on Phase 3 (request service, auth scoping).
 - [x] `RequestDetailSkeleton`
 - [x] `ActivityTimeline` + `ActivityEntry` — separate Suspense boundary below panel
 
-
-
 ### 4.4 · Metadata and caching
 
 - [x] `generateMetadata` reusing `React.cache()`-memoised query
 - [x] No duplicate DB round-trip for metadata + page body
 
-
-
 ### 4.5 · Segment states
 
 - [x] `not-found.tsx`, `loading.tsx`, `error.tsx` colocated under `[id]/`
 
-
-
 ### 4.6 · Tests
 
 - [x] E2E: `detail.spec.ts` — cold direct URL, refresh, timeline streams, not-found
-
-
 
 ### Done when
 
@@ -695,8 +585,6 @@ Depends on Phase 3 (request service, auth scoping).
 
 ---
 
-
-
 ## Phase 5 · Update workflow
 
 **Goal:** status and assignee updates with optimistic UI, idempotency, and concurrency.
@@ -705,7 +593,6 @@ Depends on Phase 3 (request service, auth scoping).
 role enforcement ([01 test matrix § role-scoped access](./01-requirements-traceability.md#test-matrix)).
 
 ### Before you start
-
 
 | Read first                                                                                 | Why                                  |
 | ------------------------------------------------------------------------------------------ | ------------------------------------ |
@@ -717,12 +604,9 @@ role enforcement ([01 test matrix § role-scoped access](./01-requirements-trace
 | [14 · UI component plan](./14-ui-component-plan.md#update-workflow-phase-5)                | Controls + toasts                    |
 | [09 · Testing strategy](./09-testing-strategy.md) — update E2E list                        | Spec names                           |
 
-
-
 | Cursor rules                                   | Skills                                                                         |
 | ---------------------------------------------- | ------------------------------------------------------------------------------ |
 | `03-server-actions.mdc`, `01-architecture.mdc` | `react-state-management`, `error-handling-patterns`, `test-driven-development` |
-
 
 Depends on Phase 3 (dashboard rows) and Phase 4 (detail panel).
 
@@ -731,37 +615,27 @@ Depends on Phase 3 (dashboard rows) and Phase 4 (detail panel).
 - [x] `src/lib/request-status.ts` — valid transitions only
 - [x] Exhaustive N×N unit test
 
-
-
 ### 5.2 · Repository write paths
 
 - [x] `updateStatusIfVersionMatches` — optimistic concurrency
 - [x] `updateAssigneeIfVersionMatches` — same pattern
 - [x] Activity row insert in same transaction as update
 
-
-
 ### 5.3 · Idempotency
 
 - [x] `src/server/services/idempotency.ts` — store key; unique violation → "already applied"
 - [x] Integration test: replay returns original result, one activity row
-
-
 
 ### 5.4 · Request service (write path)
 
 - [x] Full transaction: version check → update → activity → `resolved_at` when transitioning to `resolved`
 - [x] Return typed `Result` / `AppError` codes
 
-
-
 ### 5.5 · Server Actions
 
 - [x] `src/features/requests/schemas/update.ts`
 - [x] `update-status.ts`, `update-assignee.ts` — four-step preamble each
 - [x] Client-generated `idempotencyKey` in payload
-
-
 
 ### 5.6 · UI controls
 
@@ -771,14 +645,10 @@ Depends on Phase 3 (dashboard rows) and Phase 4 (detail panel).
 - [x] `tooltip` when `canEdit` is false
 - [x] `sonner` toasts mapped from `AppError` codes
 
-
-
 ### 5.7 · Cache invalidation
 
 - [x] `updateTag` / `revalidateTag` on successful write — request, activity, and facet-count tags
 - [x] Conflict UX: show server value + reload action
-
-
 
 ### 5.8 · Tests
 
@@ -787,8 +657,6 @@ Depends on Phase 3 (dashboard rows) and Phase 4 (detail panel).
   `conflict.spec.ts`, `duplicate-submit.spec.ts`, `access-control.spec.ts`
   ```
 - [x] Integration: version mismatch, idempotency replay
-
-
 
 ### Done when
 
@@ -800,8 +668,6 @@ This phase is worth over-investing in — largest gap between demo and productio
 
 ---
 
-
-
 ## Phase 6 · Insights and activity summary utility
 
 **Goal:** advanced-JavaScript requirement plus a screen that uses it.
@@ -810,7 +676,6 @@ This phase is worth over-investing in — largest gap between demo and productio
 
 ### Before you start
 
-
 | Read first                                                                                     | Why                          |
 | ---------------------------------------------------------------------------------------------- | ---------------------------- |
 | [10 · Activity summary utility](./10-activity-summary-utility.md) — contract, algorithm, tests | Owns the utility spec        |
@@ -818,12 +683,9 @@ This phase is worth over-investing in — largest gap between demo and productio
 | [14 · UI component plan](./14-ui-component-plan.md#insights-phase-6)                           | Insights table + collapsible |
 | [03 · System architecture](./03-system-architecture.md) — `lib/` purity                        | No I/O in utility            |
 
-
-
 | Cursor rules     | Skills                                                           |
 | ---------------- | ---------------------------------------------------------------- |
 | `04-testing.mdc` | `vitest`, `test-driven-development`, `typescript-advanced-types` |
-
 
 Can run in parallel with Phase 5 hardening if needed — no mutation pipeline dependency.
 
@@ -833,20 +695,14 @@ Can run in parallel with Phase 5 hardening if needed — no mutation pipeline de
 - [x] Streaming variant consuming async iterables
 - [x] No framework imports; no I/O
 
-
-
 ### 6.2 · Unit suite
 
 - [x] Full suite from [10 § tests](./10-activity-summary-utility.md#tests)
 - [x] 100,000-record performance test — under 250 ms, bounded heap
 
-
-
 ### 6.3 · Repository streaming
 
 - [x] `streamAssignmentActivity()` — cursor-based async generator in activity repository
-
-
 
 ### 6.4 · Insights route
 
@@ -854,14 +710,10 @@ Can run in parallel with Phase 5 hardening if needed — no mutation pipeline de
 - [x] `InsightsSummaryTable`, `RejectedRecordsDisclosure` (`collapsible`)
 - [x] Service wires stream → utility → DTO for table
 
-
-
 ### 6.5 · Tests
 
 - [x] E2E: `insights.spec.ts`
 - [x] Sync and async utility variants agree on identical fixtures
-
-
 
 ### Done when
 
@@ -869,8 +721,6 @@ Can run in parallel with Phase 5 hardening if needed — no mutation pipeline de
 - [x] Insights page renders summary + rejected-records disclosure
 
 ---
-
-
 
 ## Phase 7 · Hardening
 
@@ -880,7 +730,6 @@ Can run in parallel with Phase 5 hardening if needed — no mutation pipeline de
 deliverables row in [01](./01-requirements-traceability.md#deliverables).
 
 ### Before you start
-
 
 | Read first                                                                                | Why                      |
 | ----------------------------------------------------------------------------------------- | ------------------------ |
@@ -893,14 +742,9 @@ deliverables row in [01](./01-requirements-traceability.md#deliverables).
 | [12 · Technical note](./12-technical-note.md)                                             | Submission write-up      |
 | [15 · Local setup](./15-local-setup.md)                                                   | README source of truth   |
 
-
-
 | Cursor rules          | Skills                                                                      |
 | --------------------- | --------------------------------------------------------------------------- |
 | All rules — full pass | `accessibility`, `security-review`, `web-perf`, `seo-audit` (metadata only) |
-
-
-
 
 ### 7.1 · Global error surfaces
 
@@ -908,33 +752,25 @@ deliverables row in [01](./01-requirements-traceability.md#deliverables).
 - [x] Root `src/app/not-found.tsx`
 - [x] `src/app/api/health/route.ts`
 
-
-
 ### 7.2 · Accessibility audit
 
 - [x] Focus-visible on every interactive element
 - [x] `prefers-reduced-motion` support
 - [x] Full keyboard-only journey ([08 § keyboard](./08-ui-states-and-accessibility.md#keyboard))
-- [ ] Manual screen-reader pass: VoiceOver / Safari, NVDA / Firefox *(pre-submission manual step)*
-
-
+- [ ] Manual screen-reader pass: VoiceOver / Safari, NVDA / Firefox _(pre-submission manual step)_
 
 ### 7.3 · Performance and bundle audit
 
 - [x] `pnpm knip` — zero unused dependencies and orphaned source files
-- [ ] `next experimental-analyze` — per-route client bundles *(pre-submission manual step)*
-- [ ] Lighthouse on production build (incognito) *(pre-submission manual step)*
-- [ ] Dev overlay review — instant-navigation insights *(pre-submission manual step)*
-
-
+- [ ] `next experimental-analyze` — per-route client bundles _(pre-submission manual step)_
+- [ ] Lighthouse on production build (incognito) _(pre-submission manual step)_
+- [ ] Dev overlay review — instant-navigation insights _(pre-submission manual step)_
 
 ### 7.4 · Security gate
 
 - [x] Walk [18 § pre-release security gate](./18-security-guidelines.md#pre-release-security-gate)
 - [x] Confirm every Server Action re-verifies session ([06 § Server Actions as public endpoints](./06-auth-and-security.md#server-actions-as-public-endpoints))
 - [x] No secrets in client bundle; `.env.example` complete
-
-
 
 ### 7.5 · Documentation and submission
 
@@ -945,26 +781,19 @@ deliverables row in [01](./01-requirements-traceability.md#deliverables).
 - [x] [12 · Technical note](./12-technical-note.md) reviewed against final implementation
 - [x] Extension points section accurate ([below](#extension-points))
 
-
-
 ### 7.6 · Final verification
 
 - [x] `pnpm verify` green on a clean clone workflow
 - [x] All E2E specs in [01 test matrix](./01-requirements-traceability.md#test-matrix) passing
 
-
-
 ### Done when
 
-- [x] Submission checklist in [18 § pre-release gate](./18-security-guidelines.md#pre-release-security-gate) satisfied *(automated gates; manual SR / Lighthouse optional before hand-off)*
+- [x] Submission checklist in [18 § pre-release gate](./18-security-guidelines.md#pre-release-security-gate) satisfied _(automated gates; manual SR / Lighthouse optional before hand-off)_
 - [x] README lets a reviewer run the app without asking questions
 
 ---
 
-
-
 ## Risk register
-
 
 | Risk                                          | Likelihood | Impact | Response                                                                                                                        |
 | --------------------------------------------- | ---------- | ------ | ------------------------------------------------------------------------------------------------------------------------------- |
@@ -976,25 +805,21 @@ deliverables row in [01](./01-requirements-traceability.md#deliverables).
 | Scope creep into request creation             | Medium     | Medium | Out of scope per [01 § does not cover](./01-requirements-traceability.md#requirements-this-design-intentionally-does-not-cover) |
 | Agent skips doc read at session start         | Medium     | Medium | **Before you start** tables are mandatory; announce what was read                                                               |
 
-
 The first row is the one to watch. `cacheComponents` is the highest-leverage and
 highest-risk decision — which is why Phase 3 ends with a build checkpoint rather than
 leaving verification to the end.
 
 ---
 
-
-
 ## Extension points
 
 Worth noting in the README as deliberate future work rather than oversights:
 
 - **PostgreSQL** — swap `src/server/db/client.ts`; move FTS to `tsvector`. Repository
-signatures unchanged.
+  signatures unchanged.
 - **Database-backed sessions** — `sessions` table enables server-side revocation. One
-function in the DAL changes.
+  function in the DAL changes.
 - **Real-time updates** — SSE or polling with `refresh()`. Would justify TanStack Query.
 - **Redis rate limiting** — replace in-memory limiter behind existing interface.
 - **Bulk actions** — idempotency and concurrency primitives already support them; UI missing.
 - **Nonce-based CSP** — if `experimental.sri` stabilises ([06 § CSP](./06-auth-and-security.md#content-security-policy)).
-

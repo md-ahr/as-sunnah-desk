@@ -6,28 +6,28 @@ The hard constraints from the brief shape most of these: **Next.js for frontend 
 
 ## Summary
 
-| Concern | Choice | Version |
-|---|---|---|
-| Framework | Next.js App Router | 16.3.5 (installed) |
-| UI runtime | React | 19.2.8 (installed) |
-| Language | TypeScript, `strict` | 5.x |
-| Compiler | React Compiler (`reactCompiler: true`) | `babel-plugin-react-compiler` 1.0.0 (installed) |
-| Styling | Tailwind CSS | 4.x (installed) |
-| Component primitives | shadcn/ui on Base UI (`@base-ui/react`) | latest |
-| Database | SQLite via libSQL, local file | `@libsql/client` 0.18.x |
-| ORM / query builder | Drizzle ORM + Drizzle Kit | 0.45.x / 0.31.x |
-| Validation | Zod | 4.x |
-| Sessions | iron-session | 9.x |
-| Password hashing | `@node-rs/argon2` | 2.x |
-| Dashboard columns | Shared `request-columns.ts` constant | — |
-| Virtualisation | TanStack Virtual (assignee picker only) | 3.x |
-| Toasts | sonner | 2.x |
-| Seed data | `@faker-js/faker` (dev only) | latest |
-| Unit / integration tests | Vitest + React Testing Library | Vitest 5.x |
-| E2E tests | Playwright | 1.63.x |
-| Accessibility tests | `jest-axe` + `@axe-core/playwright` | — |
-| Lint | ESLint flat config + `eslint-config-next` | ESLint 9.x |
-| Dead code / deps | Knip | 5.x |
+| Concern                  | Choice                                    | Version                                         |
+| ------------------------ | ----------------------------------------- | ----------------------------------------------- |
+| Framework                | Next.js App Router                        | 16.3.5 (installed)                              |
+| UI runtime               | React                                     | 19.2.8 (installed)                              |
+| Language                 | TypeScript, `strict`                      | 5.x                                             |
+| Compiler                 | React Compiler (`reactCompiler: true`)    | `babel-plugin-react-compiler` 1.0.0 (installed) |
+| Styling                  | Tailwind CSS                              | 4.x (installed)                                 |
+| Component primitives     | shadcn/ui on Base UI (`@base-ui/react`)   | latest                                          |
+| Database                 | SQLite via libSQL, local file             | `@libsql/client` 0.18.x                         |
+| ORM / query builder      | Drizzle ORM + Drizzle Kit                 | 0.45.x / 0.31.x                                 |
+| Validation               | Zod                                       | 4.x                                             |
+| Sessions                 | iron-session                              | 9.x                                             |
+| Password hashing         | `@node-rs/argon2`                         | 2.x                                             |
+| Dashboard columns        | Shared `request-columns.ts` constant      | —                                               |
+| Virtualisation           | TanStack Virtual (assignee picker only)   | 3.x                                             |
+| Toasts                   | sonner                                    | 2.x                                             |
+| Seed data                | `@faker-js/faker` (dev only)              | latest                                          |
+| Unit / integration tests | Vitest + React Testing Library            | Vitest 5.x                                      |
+| E2E tests                | Playwright                                | 1.63.x                                          |
+| Accessibility tests      | `jest-axe` + `@axe-core/playwright`       | —                                               |
+| Lint                     | ESLint flat config + `eslint-config-next` | ESLint 9.x                                      |
+| Dead code / deps         | Knip                                      | 5.x                                             |
 
 Peer ranges for every library above were checked against React 19 and Next 16 before selection.
 
@@ -70,17 +70,17 @@ The requirements are 10,000+ records, real filtering/sorting/pagination behaviou
 >
 > SQLite gives real SQL: composite indexes, `EXPLAIN QUERY PLAN`, FTS5 full-text search, and window functions. It needs no daemon, no Docker, and no credentials — `pnpm db:seed` produces a working **12,000-row** database (above the brief's 10,000+ threshold). Drizzle gives fully typed queries inferred from the schema, plus SQL-shaped composability, which matters because the list query is assembled from a variable number of filter predicates.
 
-**Why the async libSQL client rather than `better-sqlite3` or `node:sqlite`.** This is subtle but genuinely important under Cache Components. The Next.js 16 docs classify synchronous I/O — naming `better-sqlite3` and `node:sqlite` explicitly — as a *predictable value* that completes during prerendering and gets baked into the static shell. For per-request, per-user data that is exactly wrong: you would have to remember to call `connection()` before every query to prevent it. `@libsql/client` is async, so queries behave as uncached dynamic reads and the framework's own Suspense validation catches mistakes for you. Choosing the async driver removes a footgun instead of documenting one.
+**Why the async libSQL client rather than `better-sqlite3` or `node:sqlite`.** This is subtle but genuinely important under Cache Components. The Next.js 16 docs classify synchronous I/O — naming `better-sqlite3` and `node:sqlite` explicitly — as a _predictable value_ that completes during prerendering and gets baked into the static shell. For per-request, per-user data that is exactly wrong: you would have to remember to call `connection()` before every query to prevent it. `@libsql/client` is async, so queries behave as uncached dynamic reads and the framework's own Suspense validation catches mistakes for you. Choosing the async driver removes a footgun instead of documenting one.
 
 **Rejected alternatives:**
 
-| Option | Why not |
-|---|---|
-| PostgreSQL in Docker | The most production-realistic choice, and the repository layer is written so the swap is a driver change. Rejected here because it adds a Docker prerequisite to "run locally", and demonstrates nothing about the frontend that SQLite does not. |
-| Prisma | Excellent DX, but a heavier toolchain (engine binary, generate step) and less natural for dynamically composed `WHERE` clauses. |
-| In-memory array / JSON file | Cannot demonstrate indexing, query planning, or FTS. "10,000 records" becomes a claim rather than a property. |
-| PGlite (Postgres in WASM) | Interesting, and would give Postgres semantics locally, but immature enough to be a risk on the critical path. |
-| Raw SQL, no ORM | Loses end-to-end type inference between schema and UI, which is much of what makes the data layer maintainable. |
+| Option                      | Why not                                                                                                                                                                                                                                           |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| PostgreSQL in Docker        | The most production-realistic choice, and the repository layer is written so the swap is a driver change. Rejected here because it adds a Docker prerequisite to "run locally", and demonstrates nothing about the frontend that SQLite does not. |
+| Prisma                      | Excellent DX, but a heavier toolchain (engine binary, generate step) and less natural for dynamically composed `WHERE` clauses.                                                                                                                   |
+| In-memory array / JSON file | Cannot demonstrate indexing, query planning, or FTS. "10,000 records" becomes a claim rather than a property.                                                                                                                                     |
+| PGlite (Postgres in WASM)   | Interesting, and would give Postgres semantics locally, but immature enough to be a risk on the critical path.                                                                                                                                    |
+| Raw SQL, no ORM             | Loses end-to-end type inference between schema and UI, which is much of what makes the data layer maintainable.                                                                                                                                   |
 
 ## Validation
 
@@ -89,7 +89,7 @@ The requirements are 10,000+ records, real filtering/sorting/pagination behaviou
 There are exactly three trust boundaries, and Zod owns all of them:
 
 1. **The URL** → the search-params schema. Invalid input coerces to defaults rather than erroring, because a malformed URL should not break a dashboard.
-2. **Form and action input** → per-action input schemas. Failures are *returned* as field errors, following the Next.js guidance that expected errors are return values rather than exceptions.
+2. **Form and action input** → per-action input schemas. Failures are _returned_ as field errors, following the Next.js guidance that expected errors are return values rather than exceptions.
 3. **Environment variables** → parsed once at startup, so a missing `SESSION_PASSWORD` fails immediately and loudly instead of at first login.
 
 Types are always inferred from schemas, never written alongside them, so the two cannot drift.
@@ -108,18 +108,18 @@ The session cookie holds only a `userId` and an expiry. Every request resolves t
 
 **Rejected:**
 
-| Option | Why not |
-|---|---|
-| NextAuth / Auth.js | The right answer for a real product with OAuth providers, but for "a simple login/logout flow" it hides exactly the session-handling and authorization-layering decisions the assessment wants to see. |
-| Clerk / Auth0 / Better Auth | External services, or more surface area than the brief needs. |
-| Hand-rolled JWT with `jose` | Also documented and perfectly valid. `iron-session` won because sealed-cookie semantics are simpler to reason about, and no third party needs to verify the token. |
-| `bcryptjs` | No native dependency, but markedly slower, and Argon2id is the better primitive. |
+| Option                      | Why not                                                                                                                                                                                                |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| NextAuth / Auth.js          | The right answer for a real product with OAuth providers, but for "a simple login/logout flow" it hides exactly the session-handling and authorization-layering decisions the assessment wants to see. |
+| Clerk / Auth0 / Better Auth | External services, or more surface area than the brief needs.                                                                                                                                          |
+| Hand-rolled JWT with `jose` | Also documented and perfectly valid. `iron-session` won because sealed-cookie semantics are simpler to reason about, and no third party needs to verify the token.                                     |
+| `bcryptjs`                  | No native dependency, but markedly slower, and Argon2id is the better primitive.                                                                                                                       |
 
 ## UI layer
 
 > **Decision — Tailwind CSS 4 with shadcn/ui components built on Base UI primitives.**
 
-Tailwind 4 is already installed and configured. Its relevance here is not developer convenience but that the responsive strategy is *pure CSS*: the same server-rendered DOM becomes a table on desktop and a card list on mobile. No breakpoint detection in JavaScript, therefore no hydration mismatch and no layout shift.
+Tailwind 4 is already installed and configured. Its relevance here is not developer convenience but that the responsive strategy is _pure CSS_: the same server-rendered DOM becomes a table on desktop and a card list on mobile. No breakpoint detection in JavaScript, therefore no hydration mismatch and no layout shift.
 
 shadcn/ui is not a dependency in the usual sense — components are copied into the repository and owned outright. That matters for an assessment: the accessibility behaviour is visible and reviewable rather than buried in `node_modules`. Underneath, Base UI (`@base-ui/react`) provides the parts that are genuinely hard to get right: focus trapping in dialogs, roving tabindex in menus, correct ARIA wiring, screen-reader announcements.
 
@@ -143,7 +143,7 @@ pnpm dlx shadcn@latest init --template next --base base
 
 shadcn/ui provides **styled primitives** (`button`, `badge`, `sheet`, …) and an optional `table` element wrapper for cosmetics. It does **not** replace a table library — and we do not need one. The shadcn `data-table` block is built on TanStack Table and pulls client-side table state into the bundle; that fights the server-rendered, SQL-paginated design.
 
-Instead, `features/requests/request-columns.ts` exports a single typed array — column id, header label, sort key, responsive visibility, `data-label` for mobile cards — that both `RequestTable` (desktop `<th>` / `<td>`) and the mobile card CSS read from. Filtering, sorting, and pagination stay in SQL; the column module is the only source of truth for *what* renders.
+Instead, `features/requests/request-columns.ts` exports a single typed array — column id, header label, sort key, responsive visibility, `data-label` for mobile cards — that both `RequestTable` (desktop `<th>` / `<td>`) and the mobile card CSS read from. Filtering, sorting, and pagination stay in SQL; the column module is the only source of truth for _what_ renders.
 
 **Rejected:** TanStack Table (unnecessary dependency for eight columns of server-rendered data); shadcn `data-table` block (TanStack Table + client patterns we explicitly avoid).
 
@@ -180,7 +180,7 @@ Three notable absences:
 ## Tooling
 
 - **Vitest** for unit and component tests, configured exactly as the Next.js docs specify (`@vitejs/plugin-react`, `vite-tsconfig-paths`, `jsdom`).
-- **Playwright** for E2E. This is not merely belt-and-braces: the Next.js docs state plainly that Vitest does not support async Server Components and recommend E2E tests for them. Since most of this application *is* async Server Components, Playwright carries the real coverage weight. See [09 · Testing strategy](./09-testing-strategy.md).
+- **Playwright** for E2E. This is not merely belt-and-braces: the Next.js docs state plainly that Vitest does not support async Server Components and recommend E2E tests for them. Since most of this application _is_ async Server Components, Playwright carries the real coverage weight. See [09 · Testing strategy](./09-testing-strategy.md).
 - **ESLint flat config** with `eslint-config-next/core-web-vitals`, `typescript-eslint` type-checked rules, `jsx-a11y`, `import/no-restricted-paths` (layer boundaries), and `eslint-config-prettier`. See [11 · Phase 0](./11-implementation-roadmap.md#phase-0--foundation) for the full rule set.
 - **Prettier** + `prettier-plugin-tailwindcss` for formatting; **EditorConfig** and **VS Code** workspace settings for format-on-save and ESLint fix-on-save.
 - **Lefthook** + **lint-staged** for pre-commit (lint/format staged files) and pre-push (typecheck + unit tests). Full `pnpm verify` runs in CI and before submission, not on every push.

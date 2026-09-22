@@ -25,17 +25,31 @@ export function priorityLabel(priority: RequestPriority): string {
   return PRIORITY_LABELS[priority]
 }
 
+const MINUTE_MS = 60_000
+const HOUR_MS = 60 * MINUTE_MS
+const DAY_MS = 24 * HOUR_MS
+const MONTH_MS = 30 * DAY_MS
+const YEAR_MS = 365 * DAY_MS
+
 export function formatRelativeTime(date: Date, now: Date | number): string {
   const nowMs = typeof now === 'number' ? now : now.getTime()
   const diffMs = date.getTime() - nowMs
   const absMs = Math.abs(diffMs)
-  const minutes = Math.round(absMs / 60_000)
-  const hours = Math.round(absMs / 3_600_000)
-  const formatter = new Intl.RelativeTimeFormat('en', { numeric: 'auto' })
+  const formatter = new Intl.RelativeTimeFormat('en', { numeric: 'always' })
 
-  if (minutes < 60) return formatter.format(Math.round(diffMs / 60_000), 'minute')
-  if (hours < 48) return formatter.format(Math.round(diffMs / 3_600_000), 'hour')
-  return formatter.format(Math.round(diffMs / 86_400_000), 'day')
+  if (absMs < HOUR_MS) return formatter.format(Math.round(diffMs / MINUTE_MS), 'minute')
+  if (absMs < DAY_MS) return formatter.format(Math.round(diffMs / HOUR_MS), 'hour')
+  if (absMs < MONTH_MS) return formatter.format(Math.round(diffMs / DAY_MS), 'day')
+
+  if (absMs < YEAR_MS) {
+    const months = Math.round(diffMs / MONTH_MS)
+    if (Math.abs(months) < 12) {
+      return formatter.format(months === 0 ? -1 : months, 'month')
+    }
+  }
+
+  const years = Math.round(diffMs / YEAR_MS)
+  return formatter.format(years === 0 ? -1 : years, 'year')
 }
 
 export function formatAbsoluteTime(date: Date): string {

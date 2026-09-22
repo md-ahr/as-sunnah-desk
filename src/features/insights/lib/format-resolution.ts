@@ -1,3 +1,9 @@
+function formatDuration(value: number, singular: string, plural: string): string {
+  const formatted = value.toFixed(1)
+  const amount = Number(formatted)
+  return `${formatted} ${amount === 1 ? singular : plural}`
+}
+
 export function formatResolutionTime(ms: number | null): string {
   if (ms === null) {
     return '—'
@@ -5,11 +11,11 @@ export function formatResolutionTime(ms: number | null): string {
 
   const hours = ms / 3_600_000
   if (hours < 24) {
-    return `${hours.toFixed(1)} h`
+    return formatDuration(hours, 'hour', 'hours')
   }
 
   const days = hours / 24
-  return `${days.toFixed(1)} d`
+  return formatDuration(days, 'day', 'days')
 }
 
 export function formatResolutionRate(rate: number): string {

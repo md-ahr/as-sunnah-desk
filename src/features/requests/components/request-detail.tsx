@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { ChevronLeftIcon } from 'lucide-react'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { Suspense } from 'react'
@@ -9,12 +10,6 @@ import { RequestActivitySection } from '@/features/activity/components/activity-
 import { RequestDetailPanel } from '@/features/requests/components/request-detail-panel'
 import { loadRequestByReference } from '@/features/requests/lib/load-request'
 import { getFilterOptions } from '@/server/services/reference.service'
-import {
-  canUpdateRequestAssignee,
-  canUpdateRequestStatus,
-  getAssigneeOptionsForUser,
-} from '@/server/services/request-permissions.service'
-import { getCurrentUser } from '@/server/services/session.service'
 
 export async function generateRequestDetailMetadata(
   params: Promise<{ id: string }>,
@@ -37,9 +32,8 @@ export async function generateRequestDetailMetadata(
 
 export async function RequestDetail({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const [request, user, filterOptions] = await Promise.all([
+  const [request, filterOptions] = await Promise.all([
     loadRequestByReference(id),
-    getCurrentUser(),
     getFilterOptions(),
   ])
 
@@ -47,22 +41,26 @@ export async function RequestDetail({ params }: { params: Promise<{ id: string }
     notFound()
   }
 
-  const assigneeOptions = getAssigneeOptionsForUser(user, filterOptions.assignees)
+  const assigneeOptions = filterOptions.assignees.map(({ id: assigneeId, name }) => ({
+    id: assigneeId,
+    name,
+  }))
 
   return (
-    <div className="space-y-8">
-      <p>
+    <div className="space-y-6">
+      <nav aria-label="Request navigation">
         <Link
           href="/requests"
-          className="text-muted-foreground hover:text-foreground text-sm font-medium transition-colors"
+          className="text-muted-foreground hover:text-foreground -ml-1 inline-flex items-center gap-1 rounded-sm px-1 py-0.5 text-sm font-medium transition-colors"
         >
+          <ChevronLeftIcon aria-hidden="true" className="size-4 shrink-0" />
           Back to all requests
         </Link>
-      </p>
+      </nav>
       <RequestDetailPanel
         request={request}
-        canEditStatus={canUpdateRequestStatus(user, request)}
-        canEditAssignee={canUpdateRequestAssignee(user, request)}
+        canEditStatus
+        canEditAssignee
         assigneeOptions={assigneeOptions}
       />
       <ActivityTimelineErrorBoundary>

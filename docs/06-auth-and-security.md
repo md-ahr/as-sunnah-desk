@@ -48,7 +48,7 @@ export async function getSession(): Promise<SessionData> {
   try {
     return await unsealData<SessionData>(cookie, { password: env.SESSION_PASSWORD })
   } catch {
-    return {}          // tampered or expired seal — treat as anonymous
+    return {} // tampered or expired seal — treat as anonymous
   }
 }
 
@@ -58,16 +58,16 @@ export async function createSession(userId: string): Promise<void> {
   const cookieStore = await cookies()
 
   cookieStore.set(COOKIE_NAME, sealed, {
-    httpOnly: true,                                 // unreadable from JS → XSS cannot exfiltrate
-    secure: process.env.NODE_ENV === 'production',  // false on localhost or dev login breaks
-    sameSite: 'lax',                                // CSRF resistance, survives top-level navigation
+    httpOnly: true, // unreadable from JS → XSS cannot exfiltrate
+    secure: process.env.NODE_ENV === 'production', // false on localhost or dev login breaks
+    sameSite: 'lax', // CSRF resistance, survives top-level navigation
     expires: expiresAt,
     path: '/',
   })
 }
 
 export async function deleteSession(): Promise<void> {
-  (await cookies()).delete(COOKIE_NAME)
+  ;(await cookies()).delete(COOKIE_NAME)
 }
 ```
 
@@ -107,7 +107,7 @@ export async function getCurrentUser(): Promise<AuthenticatedUser> {
   if (!userId) redirect('/login')
 
   const user = await findActiveUserById(userId)
-  if (!user) redirect('/login')     // deleted or deactivated since the cookie was issued
+  if (!user) redirect('/login') // deleted or deactivated since the cookie was issued
 
   return { id: user.id, name: user.name, email: user.email, role: user.role }
 }
@@ -126,7 +126,7 @@ export async function requireUser(): Promise<Result<AuthenticatedUser>> {
 
 Two functions rather than one, because the correct failure behaviour differs by caller. A page should redirect to login — that is the useful outcome. A Server Action should return a structured error the client can render, because redirecting in the middle of a mutation loses the user's context and tells them nothing.
 
-Both perform a **secure check**: the id is resolved against the database, so `is_active = 0` revokes access on the next request. The docs distinguish this from an *optimistic* check (trusting cookie contents), which is all `proxy.ts` is allowed to do.
+Both perform a **secure check**: the id is resolved against the database, so `is_active = 0` revokes access on the next request. The docs distinguish this from an _optimistic_ check (trusting cookie contents), which is all `proxy.ts` is allowed to do.
 
 `findActiveUserById` is wrapped in `React.cache()`, so several callers in one render share one query.
 
@@ -134,56 +134,22 @@ The returned object is a narrow DTO, never the row. This matters concretely: `pa
 
 ## Authorization
 
-Roles map to capabilities as data, so permission logic is not scattered through components:
-
-```ts
-// server/auth/permissions.ts
-export const CAPABILITIES = {
-  admin:   ['request:read:all', 'request:update:status', 'request:update:assignee', 'request:assign:others'],
-  manager: ['request:read:all', 'request:update:status', 'request:update:assignee', 'request:assign:others'],
-  agent:   ['request:read:assigned', 'request:update:status', 'request:update:assignee'],
-  viewer:  ['request:read:all'],
-} as const satisfies Record<Role, readonly Capability[]>
-
-export function can(user: AuthenticatedUser, capability: Capability): boolean {
-  return (CAPABILITIES[user.role] as readonly Capability[]).includes(capability)
-}
-```
-
-`request:read:assigned` versus `request:read:all` is enforced in the **service layer, by narrowing the query** — not by filtering results after the fact:
-
-```ts
-// server/services/request.service.ts
-export async function listRequests(filters: RequestFilters) {
-  const auth = await requireUser()
-  if (!auth.ok) return auth
-
-  const scoped = can(auth.data, 'request:read:all')
-    ? filters
-    : { ...filters, assigneeIds: [auth.data.id] }   // agents see only their own
-
-  return ok(await requestRepository.listPaged(scoped, ...))
-}
-```
-
-Narrowing the query rather than filtering the results is the important part. Post-filtering breaks pagination (a page of 25 can return 4 rows), breaks counts, and leaks existence through totals. Scoping at the query keeps every downstream number correct and means unauthorized rows are never read at all.
-
-UI permission checks exist too — a viewer sees no status dropdown — but they are presentation, not protection. The server re-checks regardless, because hiding a control does not prevent the `POST`.
+A signed-in user can review every request and update status and assignee. The brief does not ask for separate roles, so there is no capability matrix. `requireUser()` is the check on every Server Action. Pages call `getCurrentUser()`, which redirects when the session is missing. Hiding a control is not the security boundary; the action re-checks the session.
 
 ## Server Actions as public endpoints
 
 The framework provides real protections, and it is worth knowing which ones are automatic:
 
-| Protection | Automatic? |
-|---|---|
-| `POST`-only invocation | Yes |
-| CSRF check comparing `Origin` against `Host` | Yes |
-| Encrypted, non-deterministic action IDs | Yes |
-| Unused actions stripped from the client bundle | Yes |
-| 1 MB request body limit | Yes (configurable) |
-| **Authentication and authorization** | **No — application's responsibility** |
-| **Input validation** | **No — application's responsibility** |
-| **Constraining return values** | **No — application's responsibility** |
+| Protection                                     | Automatic?                            |
+| ---------------------------------------------- | ------------------------------------- |
+| `POST`-only invocation                         | Yes                                   |
+| CSRF check comparing `Origin` against `Host`   | Yes                                   |
+| Encrypted, non-deterministic action IDs        | Yes                                   |
+| Unused actions stripped from the client bundle | Yes                                   |
+| 1 MB request body limit                        | Yes (configurable)                    |
+| **Authentication and authorization**           | **No — application's responsibility** |
+| **Input validation**                           | **No — application's responsibility** |
+| **Constraining return values**                 | **No — application's responsibility** |
 
 Every action in this application therefore follows the same four-step preamble, in this order:
 
@@ -247,7 +213,7 @@ export async function proxy(request: NextRequest) {
   if (!hasSession && !PUBLIC_PATHS.has(pathname)) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
-    url.searchParams.set('next', pathname)    // return the user where they were going
+    url.searchParams.set('next', pathname) // return the user where they were going
     return NextResponse.redirect(url)
   }
 
@@ -299,8 +265,8 @@ const securityHeaders = [
     key: 'Content-Security-Policy',
     value: [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-inline'",   // see trade-off above
-      "style-src 'self' 'unsafe-inline'",    // Tailwind injects styles
+      "script-src 'self' 'unsafe-inline'", // see trade-off above
+      "style-src 'self' 'unsafe-inline'", // Tailwind injects styles
       "img-src 'self' data: blob:",
       "font-src 'self'",
       "connect-src 'self'",
@@ -336,16 +302,16 @@ The login action also **always** runs a password verification, even when the ema
 
 ## Data security practices
 
-| Practice | Implementation |
-|---|---|
-| Server-only isolation | Every file under `server/` starts with `import 'server-only'`. A client import becomes a build error, not a leak |
-| Narrow DTOs | Repositories select explicit columns. `password_hash` never leaves the repository |
-| Environment validation | `server/env.ts` Zod-parses at startup. A missing `SESSION_PASSWORD` fails immediately, not at first login |
+| Practice                 | Implementation                                                                                                      |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------- |
+| Server-only isolation    | Every file under `server/` starts with `import 'server-only'`. A client import becomes a build error, not a leak    |
+| Narrow DTOs              | Repositories select explicit columns. `password_hash` never leaves the repository                                   |
+| Environment validation   | `server/env.ts` Zod-parses at startup. A missing `SESSION_PASSWORD` fails immediately, not at first login           |
 | No secrets in cache keys | Cache keys and `cacheTag` values are stored in **plain text**, unhashed. Tags key on ids, never on emails or tokens |
-| Parameterised queries | Drizzle binds all parameters. No string-built SQL anywhere |
-| Sort whitelist | URL `sort` maps through a `const` object to a column reference. A URL value never becomes a column name |
-| Opaque cursors | Base64-encoded, so pagination state cannot be hand-edited into an unintended query |
-| Generic auth errors | No distinction between unknown email and wrong password |
+| Parameterised queries    | Drizzle binds all parameters. No string-built SQL anywhere                                                          |
+| Sort whitelist           | URL `sort` maps through a `const` object to a column reference. A URL value never becomes a column name             |
+| Opaque cursors           | Base64-encoded, so pagination state cannot be hand-edited into an unintended query                                  |
+| Generic auth errors      | No distinction between unknown email and wrong password                                                             |
 
 The plain-text cache key point deserves emphasis because it is easy to get wrong and invisible when you do: `cacheTag` values and cached function arguments are stored as written, in both the default in-memory cache and any remote cache handler. Keying a cached function on a user's email address writes that email into a cache index in clear text. Keying on the user id does not.
 
@@ -358,8 +324,8 @@ The plain-text cache key point deserves emphasis because it is easy to get wrong
 
 ## Related documents
 
-| Document | Relationship |
-|---|---|
-| [18 · Security guidelines](./18-security-guidelines.md) | Engineering checklist: API entry points, Route Handlers, PR review, anti-patterns |
-| [07 · Mutations and client state](./07-mutations-and-client-state.md) | Idempotency, optimistic concurrency, state machine |
-| [16 · Test guidelines](./16-test-guidelines.md) | How to write auth and IDOR integration tests |
+| Document                                                              | Relationship                                                                      |
+| --------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| [18 · Security guidelines](./18-security-guidelines.md)               | Engineering checklist: API entry points, Route Handlers, PR review, anti-patterns |
+| [07 · Mutations and client state](./07-mutations-and-client-state.md) | Idempotency, optimistic concurrency, state machine                                |
+| [16 · Test guidelines](./16-test-guidelines.md)                       | How to write auth and IDOR integration tests                                      |

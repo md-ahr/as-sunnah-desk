@@ -1,12 +1,15 @@
 'use client'
 
+import { ChevronDownIcon } from 'lucide-react'
 import { useId, useOptimistic, useRef, useTransition } from 'react'
 import { toast } from 'sonner'
 
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
+  DropdownMenuLabel,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
@@ -108,6 +111,10 @@ export function StatusControl({
     )
   }
 
+  if (options.length === 0) {
+    return badge
+  }
+
   return (
     <>
       <span id={labelId} className="sr-only">
@@ -116,25 +123,29 @@ export function StatusControl({
       <DropdownMenu>
         <DropdownMenuTrigger
           aria-labelledby={labelId}
-          disabled={isPending || options.length === 0}
+          disabled={isPending}
           className={cn(
-            'focus-visible:ring-ring inline-flex rounded-md outline-none focus-visible:ring-2',
+            'focus-visible:ring-ring border-border bg-background hover:bg-muted inline-flex h-7 items-center gap-1 rounded-full border pr-1.5 pl-0.5 outline-none focus-visible:ring-2',
             isPending && 'opacity-70',
           )}
         >
           {badge}
+          <ChevronDownIcon aria-hidden="true" className="text-muted-foreground size-3.5 shrink-0" />
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="start">
-          {options.map((option) => (
-            <DropdownMenuItem
-              key={option}
-              onClick={() => {
-                onSelect(option)
-              }}
-            >
-              {statusLabel(option)}
-            </DropdownMenuItem>
-          ))}
+        <DropdownMenuContent align="start" className="min-w-40">
+          <DropdownMenuGroup>
+            <DropdownMenuLabel>Change status</DropdownMenuLabel>
+            {options.map((option) => (
+              <DropdownMenuItem
+                key={option}
+                onClick={() => {
+                  onSelect(option)
+                }}
+              >
+                {statusLabel(option)}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuGroup>
         </DropdownMenuContent>
       </DropdownMenu>
     </>

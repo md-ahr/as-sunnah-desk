@@ -1,117 +1,166 @@
+import { ChevronLeftIcon, ChevronRightIcon } from 'lucide-react'
 import Link from 'next/link'
 
+import { paginationHref } from '@/features/requests/lib/pagination-href'
+import { paginationTokens, totalPages } from '@/features/requests/lib/pagination-model'
 import { toRoute } from '@/lib/routes'
 import type { SearchParams } from '@/lib/search-params/schema'
-import { serialiseSearchParams, withSearchParams } from '@/lib/search-params/schema'
 import { cn } from '@/lib/utils'
 
 type PaginationProps = {
   params: SearchParams
   hasNextPage: boolean
+  hasPreviousPage: boolean
   nextCursor: string | null
-  total: number | `${number}+`
+  previousCursor: string | null
+  total: number
 }
 
-function pageCount(total: number | `${number}+`, perPage: number): number {
-  if (typeof total === 'string') return 20
-  return Math.min(20, Math.max(1, Math.ceil(total / perPage)))
+const controlBase =
+  'inline-flex h-9 min-w-9 items-center justify-center rounded-md border px-2 text-sm tabular-nums transition-colors sm:h-8 sm:min-w-8'
+
+function isCompactVisiblePage(page: number, currentPage: number, totalPageCount: number): boolean {
+  if (page === currentPage) return true
+  if (page === 1 || page === totalPageCount) return true
+  if (Math.abs(page - currentPage) <= 1) return true
+  return false
 }
 
-export function Pagination({ params, hasNextPage, nextCursor, total }: PaginationProps) {
-  const pages = pageCount(total, params.perPage)
-  const currentPage = params.cursor ? undefined : params.page
+export function Pagination({
+  params,
+  hasNextPage,
+  hasPreviousPage,
+  nextCursor,
+  previousCursor,
+  total,
+}: PaginationProps) {
+  const pages = totalPages(total, params.perPage)
+  const currentPage = Math.min(Math.max(1, params.page), pages)
+  const tokens = paginationTokens(currentPage, pages)
+  const cursors = {
+    next: hasNextPage ? nextCursor : null,
+    previous: hasPreviousPage ? previousCursor : null,
+  }
 
-  const prevHref =
-    params.cursor || params.page > 1
-      ? `/requests?${serialiseSearchParams(
-          withSearchParams(params, {
-            cursor: undefined,
-            page: params.page > 1 ? params.page - 1 : 1,
-          }),
-        )}`
-      : null
+  function hrefFor(page: number): string | null {
+    return paginationHref(params, page, currentPage, pages, cursors)
+  }
 
-  const nextHref =
-    hasNextPage && nextCursor
-      ? `/requests?${serialiseSearchParams(
-          withSearchParams(params, { cursor: nextCursor, page: undefined }),
-        )}`
-      : hasNextPage && currentPage !== undefined && currentPage < pages
-        ? `/requests?${serialiseSearchParams(withSearchParams(params, { page: currentPage + 1 }))}`
-        : null
+  const prevHref = currentPage > 1 ? hrefFor(currentPage - 1) : null
+  const nextHref = currentPage < pages ? hrefFor(currentPage + 1) : null
 
-  if (!prevHref && !nextHref && pages <= 1) {
+  if (pages <= 1) {
     return null
   }
 
   return (
-    <nav aria-label="Pagination" className="flex flex-wrap items-center justify-between gap-3">
-      <div className="flex items-center gap-1">
-        {prevHref ? (
-          <Link
-            href={toRoute(prevHref)}
-            className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-md border border-border px-3 text-sm hover:bg-muted"
-            rel="prev"
-          >
-            Previous
-          </Link>
-        ) : (
-          <span
-            aria-disabled="true"
-            className={cn(
-              'inline-flex min-h-11 min-w-11 items-center justify-center rounded-md border border-border px-3 text-sm text-muted-foreground',
+    <div className="flex w-full shrink-0 flex-col items-center gap-2 lg:w-auto lg:items-end">
+      <nav aria-label="Pagination">
+        <ul className="flex flex-nowrap items-center justify-center gap-1 lg:justify-end">
+          <li>
+            {prevHref ? (
+              <Link
+                href={toRoute(prevHref)}
+                aria-label="Previous page"
+                className={cn(controlBase, 'border-border hover:bg-muted')}
+                rel="prev"
+              >
+                <ChevronLeftIcon aria-hidden="true" className="size-4" />
+              </Link>
+            ) : (
+              <span
+                role="button"
+                aria-disabled="true"
+                aria-label="Previous page"
+                className={cn(controlBase, 'border-border text-muted-foreground')}
+              >
+                <ChevronLeftIcon aria-hidden="true" className="size-4" />
+              </span>
             )}
-          >
-            Previous
-          </span>
-        )}
-        {nextHref ? (
-          <Link
-            href={toRoute(nextHref)}
-            className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-md border border-border px-3 text-sm hover:bg-muted"
-            rel="next"
-          >
-            Next
-          </Link>
-        ) : (
-          <span
-            aria-disabled="true"
-            className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-md border border-border px-3 text-sm text-muted-foreground"
-          >
-            Next
-          </span>
-        )}
-      </div>
+          </li>
 
-      {!params.cursor && pages > 1 && (
-        <ol className="flex flex-wrap items-center gap-1">
-          {Array.from({ length: pages }, (_, index) => {
-            const page = index + 1
-            const href = `/requests?${serialiseSearchParams(withSearchParams(params, { page }))}`
-            const isCurrent = page === params.page
+          {tokens.map((token, index) => {
+            if (token.type === 'ellipsis') {
+              return (
+                <li
+                  key={`ellipsis-${String(index)}`}
+                  aria-hidden="true"
+                  className="text-muted-foreground hidden px-0.5 text-sm lg:list-item"
+                >
+                  …
+                </li>
+              )
+            }
 
-            return (
-              <li key={page}>
-                {isCurrent ? (
+            const label = token.page.toLocaleString()
+            const compactClass = cn(
+              !isCompactVisiblePage(token.page, currentPage, pages) && 'max-lg:hidden',
+            )
+
+            if (token.page === currentPage) {
+              return (
+                <li key={token.page} className={compactClass}>
                   <span
                     aria-current="page"
-                    className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-md bg-primary px-3 text-sm text-primary-foreground"
+                    className={cn(
+                      controlBase,
+                      'border-primary bg-primary text-primary-foreground font-medium',
+                    )}
                   >
-                    {page}
+                    {label}
                   </span>
-                ) : (
-                  <Link
-                    href={toRoute(href)}
-                    className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-md border border-border px-3 text-sm hover:bg-muted"
-                  >
-                    {page}
-                  </Link>
-                )}
+                </li>
+              )
+            }
+
+            const href = hrefFor(token.page)
+
+            if (!href) {
+              return (
+                <li key={token.page} className={compactClass}>
+                  <span className={cn(controlBase, 'border-border text-muted-foreground')}>
+                    {label}
+                  </span>
+                </li>
+              )
+            }
+
+            return (
+              <li key={token.page} className={compactClass}>
+                <Link
+                  href={toRoute(href)}
+                  aria-label={`Page ${label}`}
+                  className={cn(controlBase, 'border-border hover:bg-muted')}
+                >
+                  {label}
+                </Link>
               </li>
             )
           })}
-        </ol>
-      )}
-    </nav>
+
+          <li>
+            {nextHref ? (
+              <Link
+                href={toRoute(nextHref)}
+                aria-label="Next page"
+                className={cn(controlBase, 'border-border hover:bg-muted')}
+                rel="next"
+              >
+                <ChevronRightIcon aria-hidden="true" className="size-4" />
+              </Link>
+            ) : (
+              <span
+                role="button"
+                aria-disabled="true"
+                aria-label="Next page"
+                className={cn(controlBase, 'border-border text-muted-foreground')}
+              >
+                <ChevronRightIcon aria-hidden="true" className="size-4" />
+              </span>
+            )}
+          </li>
+        </ul>
+      </nav>
+    </div>
   )
 }
