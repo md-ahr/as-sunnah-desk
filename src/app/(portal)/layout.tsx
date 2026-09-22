@@ -11,7 +11,7 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
       <Suspense fallback={<PortalHeaderSkeleton />}>
         <PortalHeader />
       </Suspense>
-      <main id="main" className="mx-auto max-w-[90rem] px-4 py-6 sm:px-6 lg:px-8">
+      <main id="main" className="mx-auto max-w-360 px-4 py-6 sm:px-6 lg:px-8">
         {children}
       </main>
     </div>
