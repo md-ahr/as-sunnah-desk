@@ -2,8 +2,8 @@ import { z } from 'zod'
 
 function readEnv() {
   return {
-    DATABASE_URL: process.env.TURSO_DATABASE_URL ?? process.env.DATABASE_URL,
-    DATABASE_AUTH_TOKEN: process.env.TURSO_AUTH_TOKEN ?? process.env.DATABASE_AUTH_TOKEN,
+    DATABASE_URL: process.env.assesment_TURSO_DATABASE_URL ?? process.env.DATABASE_URL,
+    DATABASE_AUTH_TOKEN: process.env.assesment_TURSO_AUTH_TOKEN ?? process.env.DATABASE_AUTH_TOKEN,
     SESSION_PASSWORD: process.env.SESSION_PASSWORD,
     NODE_ENV: process.env.NODE_ENV,
   }

@@ -1,7 +1,8 @@
 import { defineConfig } from 'drizzle-kit'
 
-const url = process.env.TURSO_DATABASE_URL ?? process.env.DATABASE_URL ?? 'file:./data/app.db'
-const authToken = process.env.TURSO_AUTH_TOKEN ?? process.env.DATABASE_AUTH_TOKEN
+const url =
+  process.env.assesment_TURSO_DATABASE_URL ?? process.env.DATABASE_URL ?? 'file:./data/app.db'
+const authToken = process.env.assesment_TURSO_AUTH_TOKEN ?? process.env.DATABASE_AUTH_TOKEN
 const isTurso = url.startsWith('libsql:') || Boolean(authToken)
 
 const shared = {
